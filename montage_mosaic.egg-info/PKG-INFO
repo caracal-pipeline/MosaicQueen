@@ -1,0 +1,16 @@
+Metadata-Version: 1.1
+Name: montage-mosaic
+Version: 0.0.1
+Summary: Sarah's first package
+Home-page: https://github.com/svw26
+Author: Sarah White
+Author-email: sarahwhite.astro@gmail.com
+License: ['GNU GPL v2']
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: GNU General Public License v2 (GPLv2)
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python
+Classifier: Topic :: Scientific/Engineering :: Astronomy

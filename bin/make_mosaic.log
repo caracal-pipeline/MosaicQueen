@@ -1,0 +1,10 @@
+2019-06-18 17:34:03,159 — MAKE_MOSAIC — ERROR — File j0831-5517-ska_HI.image.fits does not exist
+2019-06-18 17:34:03,159 — MAKE_MOSAIC — ERROR — File j0836-5552-ska_HI.image.fits does not exist
+2019-06-18 17:34:03,159 — MAKE_MOSAIC — ERROR — File j0839-5517-ska_HI.image.fits does not exist
+2019-06-18 17:34:03,160 — MAKE_MOSAIC — ERROR — File j0831-5517-ska_HI.pb.fits does not exist
+2019-06-18 17:34:03,160 — MAKE_MOSAIC — ERROR — File j0836-5552-ska_HI.pb.fits does not exist
+2019-06-18 17:34:03,160 — MAKE_MOSAIC — ERROR — File j0839-5517-ska_HI.pb.fits does not exist
+2019-06-18 17:34:03,160 — MAKE_MOSAIC — INFO — All cubes and beams found on disc
+2019-06-18 17:34:03,160 — MAKE_MOSAIC — INFO — Running montage tasks to create mosaic header ...
+2019-06-18 17:34:03,161 — MAKE_MOSAIC — INFO —       mImgtbl -t testmosaic_fields . testmosaic_fields.tbl
+2019-06-18 17:34:03,173 — MAKE_MOSAIC — INFO —       mMakeHdr testmosaic_fields.tbl testmosaic.hdr
