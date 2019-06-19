@@ -93,10 +93,12 @@ def check_for_regridded_files(imagesR, beamsR):
     for cc in imagesR:
         if not os.path.exists(cc):
             log.error('File {0:s} does not exist'.format(cc))
+            sys.exit()
 
     for bb in beamsR:
         if not os.path.exists(bb):
             log.error('File {0:s} does not exist'.format(bb))
+            sys.exit()
 
     log.info('All regridded images and beams found on disc')
 

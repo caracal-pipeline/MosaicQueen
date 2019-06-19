@@ -39,6 +39,7 @@ def main(argv):
     else:
         log.error(
             "Must specify the cubes/images to be mosaicked, each prefixed by '-t '.")
+        sys.exit()
 
     #print('Up to here 1')  # To aid de-bugging
 
@@ -48,13 +49,13 @@ def main(argv):
 
     for tt in images:
         if not os.path.exists(tt):
-            # Should exit automatically
             log.error('File {0:s} does not exist'.format(tt))
+            sys.exit()
 
     for bb in beams:
         if not os.path.exists(bb):
-            # Should exit automatically
             log.error('File {0:s} does not exist'.format(bb))
+            sys.exit()
 
     log.info('All images and beams found on disc')
     #print('Up to here 2')  # To aid de-bugging
