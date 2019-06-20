@@ -21,15 +21,16 @@ def main(argv):
     parser.add_argument("-m", "--mosaic_type",
                         help="State 'continuum' or 'spectral' as the type of mosaic to be made.")
     parser.add_argument("-d", "--domontage", action="store_true",
-                        help="Use montage for regridding the cubes and beams.")
+                        help="Use montage for regridding the images and beams.")
     parser.add_argument("-c", "--cutoff", default=0.1, type=float,
                          help="The cutoff in the primary beam to use (assuming a Gaussian at the moment). E.g. The default of 0.1 means going down to the 10% level for each pointing.")
     parser.add_argument("-o", "--outname", default="mymosaic",
                         help="The prefix to be used for output files.")
     parser.add_argument("-t", "--target_images", action="append",
-                        help="The names of each target/pointing image to be mosaicked. A suffix of 'image.fits' is expected.")
+                        help="The filenames of each target/pointing image to be mosaicked. A suffix of 'image.fits' is expected, and this is replaced by 'pb.fits' in order to locate the corresponding beams (which are also required as input).")
 
     args = parser.parse_args(argv)
+    mosaic_type = args.mosaic_type
     cutoff = args.cutoff
     outname = args.outname
 
@@ -38,7 +39,7 @@ def main(argv):
         images = args.target_images
     else:
         log.error(
-            "Must specify the cubes/images to be mosaicked, each prefixed by '-t '.")
+            "Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
         sys.exit()
 
     #print('Up to here 1')  # To aid de-bugging
@@ -62,7 +63,7 @@ def main(argv):
 
     if args.domontage:
         make_mosaic.use_montage_for_regridding(
-            images, beams, imagesR, beamsR, outname)
+            mosaic_type, images, beams, imagesR, beamsR, outname)
     else:
         log.info(
             'Will use mosaic header {0:s}.hdr and regridded images and beams available on disc'.format(outname))
@@ -71,7 +72,7 @@ def main(argv):
     make_mosaic.check_for_regridded_files(imagesR, beamsR)
     #print('Up to here 4')  # To aid de-bugging
 
-    make_mosaic.make_mosaic_using_beam_info(outname, imagesR, beamsR, cutoff, images)
+    make_mosaic.make_mosaic_using_beam_info(mosaic_type, outname, imagesR, beamsR, cutoff, images)
     #print('Up to here 5')  # To aid de-bugging
 
     return 0

@@ -39,51 +39,65 @@ def Run(command, verb1=1, verb2=0, getout=0):
         return result
 
 
-def make_mosaic_header(thead):
-    astrothead = fits.Header()
-    for hh in thead.keys():
-        astrothead[hh] = thead[hh]
-    for hh in 'crpix1,crval1,cdelt1,crpix2,crval2,cdelt2,crpix3,crval3,cdelt3'.split(','):
-        astrothead[hh] = float(astrothead[hh])
-    for hh in 'naxis,naxis1,naxis2,naxis3,equinox'.split(','):
-        astrothead[hh] = int(astrothead[hh])
+def make_mosaic_header(mosaic_type, t_head):
+    astro_t_head = fits.Header()
+    for hh in t_head.keys():
+        astro_t_head[hh] = t_head[hh]
+    if mosaic_type == 'spectral':
+        for hh in 'crpix1,crval1,cdelt1,crpix2,crval2,cdelt2,crpix3,crval3,cdelt3'.split(','):
+            astro_t_head[hh] = float(astro_t_head[hh])
+        for hh in 'naxis,naxis1,naxis2,naxis3,equinox'.split(','):
+            astro_t_head[hh] = int(astro_t_head[hh])
+    if mosaic_type == 'continuum':
+        for hh in 'crpix1,crval1,cdelt1,crpix2,crval2,cdelt2'.split(','):
+            astro_t_head[hh] = float(astro_t_head[hh])
+        for hh in 'naxis,naxis1,naxis2,equinox'.split(','):
+            astro_t_head[hh] = int(astro_t_head[hh])
     for hh in 'ctype1,ctype2'.split(','):
-        astrothead[hh] = astrothead[hh].replace("'", "")
-    return astrothead
+        astro_t_head[hh] = astro_t_head[hh].replace("'", "")
+    return astro_t_head
 
 
 # ---------------------------- New/re-structured functions --------------------------------- #
 
-def use_montage_for_regridding(images, beams, imagesR, beamsR, outname):
+def use_montage_for_regridding(mosaic_type, images, beams, imagesR, beamsR, outname):
     log.info('Running montage tasks to create mosaic header ...')
-    # Create a cube list
+    # Create an image list
     create_montage_list(images, '{0:s}_fields'.format(outname))
     #print(sys.stdout)
     Run('mImgtbl -t {0:s}_fields . {0:s}_fields.tbl'.format(outname))
     # Create mosaic header
     Run('mMakeHdr {0:s}_fields.tbl {0:s}.hdr'.format(outname))
     
-    log.info('Running montage tasks to regrid and mosaic input images ...')
+    # Which montage program is used for regridding depends on whether the image is 2D or 3D
+    if mosaic_type == 'spectral':
+        montage_projection = 'mProjectCube'
+        montage_add = 'mAddCube'
+    if mosaic_type == 'continuum':
+        montage_projection = 'mProject'
+        montage_add = 'mAdd'
+
+    log.info('Running montage tasks to regrid the input images ...')
     # Reproject the input images
     for cc in images:
-        Run('mProjectCube {0:s} {1:s} {2:s}.hdr'.format(
+        Run(montage_projection + ' {0:s} {1:s} {2:s}.hdr'.format(
             cc, cc.replace('image.fits', 'imageR.fits'), outname))
-    # Create a reprojected image metadata file
+    # Create a reprojected-image metadata file
     create_montage_list(imagesR, '{0:s}_fields_regrid'.format(outname))
     Run('mImgtbl -t {0:s}_fields_regrid . {0:s}_fields_regrid.tbl'.format(outname))
-    # Co-add the reprojected cubes
-    #Run('mAddCube -p . {0:s}_fields_regrid.tbl {0:s}.hdr {0:s}.fits'.format(outname))
+    # Co-add the reprojected images
+    #Run(montage_add + ' -p . {0:s}_fields_regrid.tbl {0:s}.hdr {0:s}.fits'.format(outname))
     
-    log.info('Running montage tasks to regrid and mosaic input beams ...')
+    log.info('Running montage tasks to regrid the input beams ...')
     # Reproject the input beams
     for bb in beams:
-        Run('mProjectCube {0:s} {1:s} {2:s}.hdr'.format(
+        Run(montage_projection + ' {0:s} {1:s} {2:s}.hdr'.format(
             bb, bb.replace('pb.fits', 'pbR.fits'), outname))
-    # Create a reprojected beams metadata file
+    # Create a reprojected-beams metadata file
     create_montage_list(beamsR, '{0:s}_beams_regrid'.format(outname))
     Run('mImgtbl -t {0:s}_beams_regrid . {0:s}_beams_regrid.tbl'.format(outname))
     # Co-add the reprojected beams
-    #Run('mAddCube -p . {0:s}_beams_regrid.tbl {0:s}.hdr {0:s}pb.fits'.format(outname))
+    #Run(montage_add + ' -p . {0:s}_beams_regrid.tbl {0:s}.hdr {0:s}pb.fits'.format(outname))
 
     return 0
 
@@ -105,18 +119,22 @@ def check_for_regridded_files(imagesR, beamsR):
     return 0
 
 
-def make_mosaic_using_beam_info(outname, imagesR, beamsR, cutoff, images):
+def make_mosaic_using_beam_info(mosaic_type, outname, imagesR, beamsR, cutoff, images):
 
     log.info('Mosaicking ...')
     moshead = [jj.strip().replace(' ', '').split('=')
                for jj in open('{0:s}.hdr'.format(outname)).readlines()]
     if ['END'] in moshead:
         del(moshead[moshead.index(['END'])])
-    moshead = {k: v for (k, v) in moshead}
-    moscube = np.zeros((int(moshead['NAXIS3']), int(
-        moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
-    normcube = np.zeros((int(moshead['NAXIS3']), int(
-        moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
+    moshead = {k: v for (k, v) in moshead}   # Creating a dictionary, where 'k' stands for 'keyword' and 'v' stands for 'value'
+    if mosaic_type == 'spectral':
+        mos_array = np.zeros((int(moshead['NAXIS3']), int(
+            moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
+        norm_array = np.zeros((int(moshead['NAXIS3']), int(
+            moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
+    if mosaic_type == 'continuum':
+        mos_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
+        norm_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
     for ii, bb in zip(imagesR, beamsR):
         log.info('Adding {0:s} to the mosaic ...'.format(ii))
         f = fits.open(ii)  # i.e. open a specific re-gridded image
@@ -127,28 +145,28 @@ def make_mosaic_using_beam_info(outname, imagesR, beamsR, cutoff, images):
         x1 = int(float(moshead['CRPIX1']) - head['CRPIX1'])
         x2 = int(float(moshead['CRPIX1']) - head['CRPIX1'] + head['NAXIS1'])
         # mosaicking with no PB correction
-        # normcube[:,y1:y2,x1:x2]+=~np.isnan(f[0].data)
-        # moscube[:,y1:y2,x1:x2]+=np.nan_to_num(f[0].data)
+        # norm_array[:,y1:y2,x1:x2]+=~np.isnan(f[0].data)
+        # mos_array[:,y1:y2,x1:x2]+=np.nan_to_num(f[0].data)
         # mosaicking with PB correction
-        normcube[:, y1:y2, x1:x2] += (np.nan_to_num(g[0].data)
+        norm_array[:, y1:y2, x1:x2] += (np.nan_to_num(g[0].data)
                                       * (np.nan_to_num(g[0].data) > cutoff))**2
-        moscube[:, y1:y2, x1:x2] += np.nan_to_num(f[0].data)*np.nan_to_num(
+        mos_array[:, y1:y2, x1:x2] += np.nan_to_num(f[0].data)*np.nan_to_num(
             g[0].data)*(np.nan_to_num(g[0].data) > cutoff)
         f.close()
         g.close()
 
-    normcube[normcube == 0] = np.nan
-    moshead = make_mosaic_header(moshead)
-    f = fits.open(images[0]) 
-    zhead = f[0].header
-    for zz in 'ctype3'.split(','):
-        moshead[zz] = zhead[zz]
-    fits.writeto('{0:s}.fits'.format(outname), moscube /
-                 normcube, overwrite=True, header=moshead)
+    norm_array[norm_array == 0] = np.nan
+    moshead = make_mosaic_header(mosaic_type, moshead)
+    if mosaic_type == 'spectral':
+        f = fits.open(images[0]) 
+        zhead = f[0].header
+        moshead['ctype3'] = zhead['ctype3']
+    fits.writeto('{0:s}.fits'.format(outname), mos_array /
+                 norm_array, overwrite=True, header=moshead)
     fits.writeto('{0:s}_noise.fits'.format(outname), 1. /
-                 np.sqrt(normcube), overwrite=True, header=moshead)
+                 np.sqrt(norm_array), overwrite=True, header=moshead)
     fits.writeto('{0:s}_weights.fits'.format(outname),
-                 np.sqrt(normcube), overwrite=True, header=moshead)
+                 np.sqrt(norm_array), overwrite=True, header=moshead)
 
     log.info('The following mosaic FITS were written to disc: {0:s}.fits {0:s}_noise.fits {0:s}_weights.fits'.format(outname))
     log.info('Mosaicking completed')
