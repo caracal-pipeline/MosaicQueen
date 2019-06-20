@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-# ---------------------------------------------------------------------------------------------
-# Author of package: Sarah White (sarahwhite.astro@gmail.com)
+# ------------------------------------------------------------------------------------------------------
+# Author of package: Sarah White (sarahwhite.astro@gmail.com) and Sphe Makhathini (sphemakh@gmail.com)
 # Based on a mosaicking script by Paolo Serra (paolo80serra@gmail.com)
-# --------------------------------------------------------------------------------------------- 
+# ------------------------------------------------------------------------------------------------------
 
 from montage_mosaic import make_mosaic
 from argparse import ArgumentParser
@@ -71,7 +71,7 @@ def main(argv):
     make_mosaic.check_for_regridded_files(imagesR, beamsR)
     #print('Up to here 4')  # To aid de-bugging
 
-    make_mosaic.make_mosaic_using_beam_info(outname, imagesR, beamsR, cutoff)
+    make_mosaic.make_mosaic_using_beam_info(outname, imagesR, beamsR, cutoff, images)
     #print('Up to here 5')  # To aid de-bugging
 
     return 0

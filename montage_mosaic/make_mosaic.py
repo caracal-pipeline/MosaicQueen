@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-# ---------------------------------------------------------------------------------------------
-# Author of package: Sarah White (sarahwhite.astro@gmail.com)
+# ------------------------------------------------------------------------------------------------------
+# Author of package: Sarah White (sarahwhite.astro@gmail.com) and Sphe Makhathini (sphemakh@gmail.com)
 # Based on a mosaicking script by Paolo Serra (paolo80serra@gmail.com)
-# --------------------------------------------------------------------------------------------- 
+# ------------------------------------------------------------------------------------------------------
 
 from astropy.io import fits
 import subprocess
@@ -105,7 +105,7 @@ def check_for_regridded_files(imagesR, beamsR):
     return 0
 
 
-def make_mosaic_using_beam_info(outname, imagesR, beamsR, cutoff):
+def make_mosaic_using_beam_info(outname, imagesR, beamsR, cutoff, images):
 
     log.info('Mosaicking ...')
     moshead = [jj.strip().replace(' ', '').split('=')
@@ -139,7 +139,7 @@ def make_mosaic_using_beam_info(outname, imagesR, beamsR, cutoff):
 
     normcube[normcube == 0] = np.nan
     moshead = make_mosaic_header(moshead)
-    f = fits.open(images[0])  # Hasn't been passed to this function 
+    f = fits.open(images[0]) 
     zhead = f[0].header
     for zz in 'ctype3'.split(','):
         moshead[zz] = zhead[zz]
