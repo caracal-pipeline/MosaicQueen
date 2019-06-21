@@ -165,7 +165,7 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname, ima
     norm_array[norm_array == 0] = np.nan
     moshead = make_mosaic_header(mosaic_type, moshead)
     if mosaic_type == 'spectral':
-        f = fits.open(images[0]) 
+        f = fits.open(input_dir+'/'+images[0]) 
         zhead = f[0].header
         moshead['ctype3'] = zhead['ctype3']
     fits.writeto('{0:s}/{1:s}.fits'.format(output_dir,outname), mos_array /
