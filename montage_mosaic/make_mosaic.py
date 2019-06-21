@@ -148,10 +148,16 @@ def make_mosaic_using_beam_info(mosaic_type, outname, imagesR, beamsR, cutoff, i
         # norm_array[:,y1:y2,x1:x2]+=~np.isnan(f[0].data)
         # mos_array[:,y1:y2,x1:x2]+=np.nan_to_num(f[0].data)
         # mosaicking with PB correction
-        norm_array[:, y1:y2, x1:x2] += (np.nan_to_num(g[0].data)
+        if mosaic_type == 'spectral':
+            norm_array[:, y1:y2, x1:x2] += (np.nan_to_num(g[0].data)
                                       * (np.nan_to_num(g[0].data) > cutoff))**2
-        mos_array[:, y1:y2, x1:x2] += np.nan_to_num(f[0].data)*np.nan_to_num(
-            g[0].data)*(np.nan_to_num(g[0].data) > cutoff)
+            mos_array[:, y1:y2, x1:x2] += np.nan_to_num(f[0].data)*np.nan_to_num(
+                g[0].data)*(np.nan_to_num(g[0].data) > cutoff)
+        if mosaic_type == 'continuum':
+            norm_array[y1:y2, x1:x2] += (np.nan_to_num(g[0].data)
+                                      * (np.nan_to_num(g[0].data) > cutoff))**2
+            mos_array[y1:y2, x1:x2] += np.nan_to_num(f[0].data)*np.nan_to_num(
+                g[0].data)*(np.nan_to_num(g[0].data) > cutoff)
         f.close()
         g.close()
 
@@ -171,4 +177,4 @@ def make_mosaic_using_beam_info(mosaic_type, outname, imagesR, beamsR, cutoff, i
     log.info('The following mosaic FITS were written to disc: {0:s}.fits {0:s}_noise.fits {0:s}_weights.fits'.format(outname))
     log.info('Mosaicking completed')
 
-    return 0
+    return 
