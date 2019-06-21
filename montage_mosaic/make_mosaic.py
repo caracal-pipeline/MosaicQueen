@@ -63,11 +63,11 @@ def make_mosaic_header(mosaic_type, t_head):
 def use_montage_for_regridding(mosaic_type, images, beams, imagesR, beamsR, outname):
     log.info('Running montage tasks to create mosaic header ...')
     # Create an image list
-    create_montage_list(images, '{0:s}_fields'.format(outname))
+    create_montage_list(images, 'output/{0:s}_fields'.format(outname))
     #print(sys.stdout)
-    Run('mImgtbl -t {0:s}_fields . {0:s}_fields.tbl'.format(outname))
+    Run('mImgtbl -t output/{0:s}_fields input output/{0:s}_fields.tbl'.format(outname))
     # Create mosaic header
-    Run('mMakeHdr {0:s}_fields.tbl {0:s}.hdr'.format(outname))
+    Run('mMakeHdr output/{0:s}_fields.tbl output/{0:s}.hdr'.format(outname))
     
     # Which montage program is used for regridding depends on whether the image is 2D or 3D
     if mosaic_type == 'spectral':
@@ -80,22 +80,22 @@ def use_montage_for_regridding(mosaic_type, images, beams, imagesR, beamsR, outn
     log.info('Running montage tasks to regrid the input images ...')
     # Reproject the input images
     for cc in images:
-        Run(montage_projection + ' {0:s} {1:s} {2:s}.hdr'.format(
+        Run(montage_projection + ' input/{0:s} output/{1:s} output/{2:s}.hdr'.format(
             cc, cc.replace('image.fits', 'imageR.fits'), outname))
     # Create a reprojected-image metadata file
-    create_montage_list(imagesR, '{0:s}_fields_regrid'.format(outname))
-    Run('mImgtbl -t {0:s}_fields_regrid . {0:s}_fields_regrid.tbl'.format(outname))
+    create_montage_list(imagesR, 'output/{0:s}_fields_regrid'.format(outname))
+    Run('mImgtbl -t output/{0:s}_fields_regrid input output/{0:s}_fields_regrid.tbl'.format(outname))
     # Co-add the reprojected images
     #Run(montage_add + ' -p . {0:s}_fields_regrid.tbl {0:s}.hdr {0:s}.fits'.format(outname))
     
     log.info('Running montage tasks to regrid the input beams ...')
     # Reproject the input beams
     for bb in beams:
-        Run(montage_projection + ' {0:s} {1:s} {2:s}.hdr'.format(
+        Run(montage_projection + ' input/{0:s} output/{1:s} output/{2:s}.hdr'.format(
             bb, bb.replace('pb.fits', 'pbR.fits'), outname))
     # Create a reprojected-beams metadata file
-    create_montage_list(beamsR, '{0:s}_beams_regrid'.format(outname))
-    Run('mImgtbl -t {0:s}_beams_regrid . {0:s}_beams_regrid.tbl'.format(outname))
+    create_montage_list(beamsR, 'output/{0:s}_beams_regrid'.format(outname))
+    Run('mImgtbl -t output/{0:s}_beams_regrid input output/{0:s}_beams_regrid.tbl'.format(outname))
     # Co-add the reprojected beams
     #Run(montage_add + ' -p . {0:s}_beams_regrid.tbl {0:s}.hdr {0:s}pb.fits'.format(outname))
 
@@ -105,13 +105,13 @@ def use_montage_for_regridding(mosaic_type, images, beams, imagesR, beamsR, outn
 def check_for_regridded_files(imagesR, beamsR):
 
     for cc in imagesR:
-        if not os.path.exists(cc):
-            log.error('File {0:s} does not exist'.format(cc))
+        if not os.path.exists('input/'+cc):
+            log.error('File {0:s} does not exist'.format('input/'+cc))
             sys.exit()
 
     for bb in beamsR:
-        if not os.path.exists(bb):
-            log.error('File {0:s} does not exist'.format(bb))
+        if not os.path.exists('input/'+bb):
+            log.error('File {0:s} does not exist'.format('input/'+bb))
             sys.exit()
 
     log.info('All regridded images and beams found on disc')
@@ -123,7 +123,7 @@ def make_mosaic_using_beam_info(mosaic_type, outname, imagesR, beamsR, cutoff, i
 
     log.info('Mosaicking ...')
     moshead = [jj.strip().replace(' ', '').split('=')
-               for jj in open('{0:s}.hdr'.format(outname)).readlines()]
+               for jj in open('output/{0:s}.hdr'.format(outname)).readlines()]
     if ['END'] in moshead:
         del(moshead[moshead.index(['END'])])
     moshead = {k: v for (k, v) in moshead}   # Creating a dictionary, where 'k' stands for 'keyword' and 'v' stands for 'value'
@@ -137,9 +137,9 @@ def make_mosaic_using_beam_info(mosaic_type, outname, imagesR, beamsR, cutoff, i
         norm_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
     for ii, bb in zip(imagesR, beamsR):
         log.info('Adding {0:s} to the mosaic ...'.format(ii))
-        f = fits.open(ii)  # i.e. open a specific re-gridded image
+        f = fits.open('input/'+ii)  # i.e. open a specific re-gridded image
         head = f[0].header
-        g = fits.open(bb)  # i.e. open a specific re-gridded beam
+        g = fits.open('input/'+bb)  # i.e. open a specific re-gridded beam
         y1 = int(float(moshead['CRPIX2']) - head['CRPIX2'])
         y2 = int(float(moshead['CRPIX2']) - head['CRPIX2'] + head['NAXIS2'])
         x1 = int(float(moshead['CRPIX1']) - head['CRPIX1'])
@@ -167,11 +167,11 @@ def make_mosaic_using_beam_info(mosaic_type, outname, imagesR, beamsR, cutoff, i
         f = fits.open(images[0]) 
         zhead = f[0].header
         moshead['ctype3'] = zhead['ctype3']
-    fits.writeto('{0:s}.fits'.format(outname), mos_array /
+    fits.writeto('output/{0:s}.fits'.format(outname), mos_array /
                  norm_array, overwrite=True, header=moshead)
-    fits.writeto('{0:s}_noise.fits'.format(outname), 1. /
+    fits.writeto('output/{0:s}_noise.fits'.format(outname), 1. /
                  np.sqrt(norm_array), overwrite=True, header=moshead)
-    fits.writeto('{0:s}_weights.fits'.format(outname),
+    fits.writeto('output/{0:s}_weights.fits'.format(outname),
                  np.sqrt(norm_array), overwrite=True, header=moshead)
 
     log.info('The following mosaic FITS were written to disc: {0:s}.fits {0:s}_noise.fits {0:s}_weights.fits'.format(outname))

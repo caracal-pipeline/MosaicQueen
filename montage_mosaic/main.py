@@ -49,13 +49,13 @@ def main(argv):
     beamsR = [tt.replace('image.fits', 'pbR.fits') for tt in images]
 
     for tt in images:
-        if not os.path.exists(tt):
-            log.error('File {0:s} does not exist'.format(tt))
+        if not os.path.exists('input/'+tt):
+            log.error('File {0:s} does not exist'.format('input/'+tt))
             sys.exit()
 
     for bb in beams:
-        if not os.path.exists(bb):
-            log.error('File {0:s} does not exist'.format(bb))
+        if not os.path.exists('input/'+bb):
+            log.error('File {0:s} does not exist'.format('input/'+bb))
             sys.exit()
 
     log.info('All images and beams found on disc')
@@ -74,5 +74,8 @@ def main(argv):
 
     make_mosaic.make_mosaic_using_beam_info(mosaic_type, outname, imagesR, beamsR, cutoff, images)
     #print('Up to here 5')  # To aid de-bugging
+
+    # Move the log file to the output directory
+    os.system('mv make_mosaic.log output/')
 
     return 0
