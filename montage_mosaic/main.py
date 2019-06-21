@@ -24,14 +24,15 @@ def main(argv):
                         help="State 'continuum' or 'spectral' as the type of mosaic to be made.")
     parser.add_argument("-d", "--domontage", action="store_true",
                         help="Use montage for regridding the images and beams.")
-    parser.add_argument("-c", "--cutoff", default=0.1, type=float,
-                         help="The cutoff in the primary beam to use (assuming a Gaussian at the moment). E.g. The default of 0.1 means going down to the 10% level for each pointing.")
+    parser.add_argument("-c", "--cutoff", type=float, default=0.1,
+                         help="The cutoff in the primary beam to use (assuming a Gaussian at the moment)."
+                              "E.g. The default of 0.1 means going down to the 10 percent level for each pointing.")
     parser.add_argument("-p", "--outname", default="mymosaic",
                         help="The prefix to be used for output files.")
     parser.add_argument("-t", "--target_images", action="append",
-                        help="The filenames of each target/pointing image to be mosaicked. A suffix of 'image.fits' is expected, and this is replaced by 'pb.fits' in order to locate the corresponding beams (which are also required as input).")
+                         help="The filenames of each target/pointing image to be mosaicked. A suffix of 'image.fits' is expected, and this is replaced by 'pb.fits' in order to locate the corresponding beams (which are also required as input).")
     parser.add_argument("-o", "--output",
-                        help="The directory for all output files.")
+                         help="The directory for all output files.")
 
     args = parser.parse_args(argv)
     input_dir = args.input
