@@ -18,21 +18,27 @@ def main(argv):
 
     parser = ArgumentParser(description="Run make_mosaic over the targets")
 
+    parser.add_argument("-i", "--input",
+                        help="The directory that contains the (2D or 3D) images and beams.")
     parser.add_argument("-m", "--mosaic_type",
                         help="State 'continuum' or 'spectral' as the type of mosaic to be made.")
     parser.add_argument("-d", "--domontage", action="store_true",
                         help="Use montage for regridding the images and beams.")
     parser.add_argument("-c", "--cutoff", default=0.1, type=float,
                          help="The cutoff in the primary beam to use (assuming a Gaussian at the moment). E.g. The default of 0.1 means going down to the 10% level for each pointing.")
-    parser.add_argument("-o", "--outname", default="mymosaic",
+    parser.add_argument("-p", "--outname", default="mymosaic",
                         help="The prefix to be used for output files.")
     parser.add_argument("-t", "--target_images", action="append",
                         help="The filenames of each target/pointing image to be mosaicked. A suffix of 'image.fits' is expected, and this is replaced by 'pb.fits' in order to locate the corresponding beams (which are also required as input).")
+    parser.add_argument("-o", "--output",
+                        help="The directory for all output files.")
 
     args = parser.parse_args(argv)
+    input_dir = args.input
     mosaic_type = args.mosaic_type
     cutoff = args.cutoff
     outname = args.outname
+    output_dir = args.output
 
     if args.target_images: 
         log.info('Target images = {}'.format(" ".join(args.target_images)))
@@ -49,13 +55,13 @@ def main(argv):
     beamsR = [tt.replace('image.fits', 'pbR.fits') for tt in images]
 
     for tt in images:
-        if not os.path.exists('input/'+tt):
-            log.error('File {0:s} does not exist'.format('input/'+tt))
+        if not os.path.exists(input_dir+'/'+tt):
+            log.error('File {0:s} does not exist'.format(input_dir+'/'+tt))
             sys.exit()
 
     for bb in beams:
-        if not os.path.exists('input/'+bb):
-            log.error('File {0:s} does not exist'.format('input/'+bb))
+        if not os.path.exists(input_dir+'/'+bb):
+            log.error('File {0:s} does not exist'.format(input_dir+'/'+bb))
             sys.exit()
 
     log.info('All images and beams found on disc')
@@ -63,19 +69,19 @@ def main(argv):
 
     if args.domontage:
         make_mosaic.use_montage_for_regridding(
-            mosaic_type, images, beams, imagesR, beamsR, outname)
+            input_dir, output_dir, mosaic_type, images, beams, imagesR, beamsR, outname)
     else:
         log.info(
             'Will use mosaic header {0:s}.hdr and regridded images and beams available on disc'.format(outname))
     #print('Up to here 3')  # To aid de-bugging
 
-    make_mosaic.check_for_regridded_files(imagesR, beamsR)
+    make_mosaic.check_for_regridded_files(output_dir, imagesR, beamsR)
     #print('Up to here 4')  # To aid de-bugging
 
-    make_mosaic.make_mosaic_using_beam_info(mosaic_type, outname, imagesR, beamsR, cutoff, images)
+    make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname, imagesR, beamsR, cutoff, images)
     #print('Up to here 5')  # To aid de-bugging
 
     # Move the log file to the output directory
-    os.system('mv make_mosaic.log output/')
+    os.system('mv make_mosaic.log '+output_dir+'/')
 
     return 0
