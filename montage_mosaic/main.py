@@ -49,8 +49,6 @@ def main(argv):
             "Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
         sys.exit()
 
-    #print('Up to here 1')  # To aid de-bugging
-
     beams = [tt.replace('image.fits', 'pb.fits') for tt in images]
     imagesR = [tt.replace('image.fits', 'imageR.fits') for tt in images]
     beamsR = [tt.replace('image.fits', 'pbR.fits') for tt in images]
@@ -66,7 +64,7 @@ def main(argv):
             sys.exit()
 
     log.info('All images and beams found on disc')
-    #print('Up to here 2')  # To aid de-bugging
+
 
     if args.domontage:
         make_mosaic.use_montage_for_regridding(
@@ -74,15 +72,12 @@ def main(argv):
     else:
         log.info(
             'Will use mosaic header {0:s}.hdr and regridded images and beams available on disc'.format(outname))
-    #print('Up to here 3')  # To aid de-bugging
 
     make_mosaic.check_for_regridded_files(output_dir, imagesR, beamsR)
-    #print('Up to here 4')  # To aid de-bugging
 
     make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname, imagesR, beamsR, cutoff, images)
-    #print('Up to here 5')  # To aid de-bugging
 
     # Move the log file to the output directory
-    os.system('mv make_mosaic.log '+output_dir+'/')
+    os.system('mv log-make_mosaic.txt '+output_dir+'/')
 
     return 0
