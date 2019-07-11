@@ -22,8 +22,8 @@ log = montage_mosaic.log
 
 def create_montage_list(inputfiles, outputfile):
     list_file = open(outputfile, 'w')
-    list_file.write('|                                fname|\n')
-    list_file.write('|                                 char|\n')
+    list_file.write('|                                      fname|\n')
+    list_file.write('|                                       char|\n')
     for ff in inputfiles:
         list_file.write(' {0:s}\n'.format(ff))
     list_file.close()
