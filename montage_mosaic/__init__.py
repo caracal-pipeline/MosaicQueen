@@ -4,7 +4,7 @@ import sys
 from logging.handlers import TimedRotatingFileHandler
 
 FORMATTER = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-LOG_FILE = "make_mosaic.log"
+LOG_FILE = "log-make_mosaic.txt"
 with open(LOG_FILE, "w") as std:
     pass
 

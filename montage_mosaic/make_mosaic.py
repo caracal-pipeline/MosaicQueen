@@ -14,7 +14,8 @@ import numpy as np
 import montage_mosaic
 import argparse
 
-log = montage_mosaic.log
+log = log-montage_mosaic.txt
+
 
 
 # -------------------- Functions from the original script ------------------------ #
