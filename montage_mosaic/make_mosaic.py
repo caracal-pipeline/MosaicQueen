@@ -85,7 +85,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, images, beams
             input_dir, cc, output_dir, cc.replace('image.fits', 'imageR.fits'), outname))
     # Create a reprojected-image metadata file
     create_montage_list(imagesR, '{0:s}/{1:s}_fields_regrid'.format(output_dir,outname))
-    Run('mImgtbl -t {0:s}/{1:s}_fields_regrid {2:s} {0:s}/{1:s}_fields_regrid.tbl'.format(output_dir,outname,input_dir))
+    Run('mImgtbl -d -t {0:s}/{1:s}_fields_regrid {0:s} {0:s}/{1:s}_fields_regrid.tbl'.format(output_dir,outname)) # '-d' flag added to aid de-bugging
     # Co-add the reprojected images
     #Run(montage_add + ' -p . {0:s}_fields_regrid.tbl {0:s}.hdr {0:s}.fits'.format(outname))
     
@@ -96,7 +96,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, images, beams
             input_dir, bb, output_dir, bb.replace('pb.fits', 'pbR.fits'), outname))
     # Create a reprojected-beams metadata file
     create_montage_list(beamsR, '{0:s}/{1:s}_beams_regrid'.format(output_dir,outname))
-    Run('mImgtbl -t {0:s}/{1:s}_beams_regrid {2:s} {0:s}/{1:s}_beams_regrid.tbl'.format(output_dir,outname,input_dir))
+    Run('mImgtbl -t {0:s}/{1:s}_beams_regrid {0:s} {0:s}/{1:s}_beams_regrid.tbl'.format(output_dir,outname))
     # Co-add the reprojected beams
     #Run(montage_add + ' -p . {0:s}_beams_regrid.tbl {0:s}.hdr {0:s}pb.fits'.format(outname))
 
