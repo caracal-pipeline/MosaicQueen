@@ -18,12 +18,16 @@ log = montage_mosaic.log
 
 
 
-# -------------------- Functions from the original script ------------------------ #
+# -------------------- Edited functions from the original script ------------------------ #
 
 def create_montage_list(inputfiles, outputfile):
     list_file = open(outputfile, 'w')
-    list_file.write('|                                      fname|\n')
-    list_file.write('|                                       char|\n')
+    # Need to know length of filename so that it does not get truncated
+    filename_length = len(inputfiles[0]) # Using the first one for the time being
+    start_of_line = '|'
+    start_and_whitespace = start_of_line.ljust(filename_length) # This will add trailing whitespace of the required length
+    list_file.write( start_and_whitespace+'fname|\n' )
+    list_file.write( start_and_whitespace+' char|\n' )
     for ff in inputfiles:
         list_file.write(' {0:s}\n'.format(ff))
     list_file.close()
