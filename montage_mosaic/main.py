@@ -11,7 +11,7 @@ import montage_mosaic
 import os
 import sys
 
-log = log-montage_mosaic.txt
+log = montage_mosaic.log
 
 
 def main(argv):
