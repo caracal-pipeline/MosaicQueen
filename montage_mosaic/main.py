@@ -59,14 +59,18 @@ def main(argv):
     beamsR = [tt.replace('image.fits', 'pbR.fits') for tt in images]
 
     for tt in images:
-        if not os.path.exists(input_dir+'/'+tt):
-            log.error('File {0:s} does not exist'.format(input_dir+'/'+tt))
-            sys.exit()
+        try:
+            open(input_dir+'/'+tt)
+        except FileNotFoundError:
+            raise('File {0:s} does not exist'.format(input_dir+'/'+tt))
+            log.error('File {0:s} does not exist'.format(input_dir+'/'+tt)) # Still need this for the log file?
 
     for bb in beams:
-        if not os.path.exists(input_dir+'/'+bb):
-            log.error('File {0:s} does not exist'.format(input_dir+'/'+bb))
-            sys.exit()
+        try:
+            open(input_dir+'/'+bb)
+        except FileNotFoundError:
+            raise('File {0:s} does not exist'.format(input_dir+'/'+bb))
+            log.error('File {0:s} does not exist'.format(input_dir+'/'+bb)) # Still need this for the log file?
 
     log.info('All images and beams found on disc')
 
