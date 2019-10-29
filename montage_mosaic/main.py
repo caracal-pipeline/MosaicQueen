@@ -51,8 +51,8 @@ def main(argv):
 
     # Throw an error if the user provides only one image
     if len(images) < 2:
-        log.error('At least two images must be specified for mosaicking')
-        sys.exit()
+        raise ValueError('At least two images must be specified for mosaicking') 
+        log.error('At least two images must be specified for mosaicking') # Still need this for the log file?
 
     beams = [tt.replace('image.fits', 'pb.fits') for tt in images]
     imagesR = [tt.replace('image.fits', 'imageR.fits') for tt in images]
