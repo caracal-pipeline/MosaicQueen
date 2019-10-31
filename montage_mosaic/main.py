@@ -45,9 +45,10 @@ def main(argv):
         log.info('Target images = {}'.format(" ".join(args.target_images)))
         images = args.target_images
     else:
+        raise LookupError("Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
         log.error(
             "Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
-        sys.exit()
+            # Still need this for the log file?
 
     # Throw an error if the user provides only one image
     if len(images) < 2:

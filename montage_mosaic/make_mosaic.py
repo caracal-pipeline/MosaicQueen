@@ -111,14 +111,16 @@ def check_for_regridded_files(output_dir, imagesR, beamsR):
     # As the regridded files were produced by montage_mosaic, we expect them to be in the output directory
 
     for cc in imagesR:
-        if not os.path.exists(output_dir+'/'+cc):
-            log.error('File {0:s} does not exist'.format(output_dir+'/'+cc))
-            sys.exit()
+        try:
+            open(output_dir+'/'+cc):
+        except FileNotFoundError:
+            raise('File {0:s} does not exist'.format(output_dir+'/'+cc))
 
     for bb in beamsR:
-        if not os.path.exists(output_dir+'/'+bb):
-            log.error('File {0:s} does not exist'.format(output_dir+'/'+bb))
-            sys.exit()
+        try:
+            open(output_dir+'/'+bb):
+        except FileNotFoundError:
+            raise('File {0:s} does not exist'.format(output_dir+'/'+bb))
 
     log.info('All regridded images and beams found on disc')
 
