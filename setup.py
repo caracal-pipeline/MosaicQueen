@@ -15,7 +15,7 @@ __version__ = '0.0.2'
 
 setup(name = PACKAGE_NAME,
     version = __version__,
-    description = "Package for applying mosaic commands using montage",
+    description = "A package with mosaicking commands from montage",
     author = "Sarah White",
     author_email = "sarahwhite.astro@gmail.com",
     url = "https://github.com/svw26",
