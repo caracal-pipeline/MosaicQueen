@@ -11,11 +11,11 @@ requirements = [
 ]
 
 PACKAGE_NAME = 'montage_mosaic'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 setup(name = PACKAGE_NAME,
     version = __version__,
-    description = "Sarah's first package",
+    description = "Package for applying mosaic commands using montage",
     author = "Sarah White",
     author_email = "sarahwhite.astro@gmail.com",
     url = "https://github.com/svw26",
