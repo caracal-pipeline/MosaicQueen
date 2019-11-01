@@ -47,26 +47,30 @@ def main(argv):
     else:
         log.error(
             "Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
-        sys.exit()
+        raise LookupError("Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
 
     # Throw an error if the user provides only one image
     if len(images) < 2:
         log.error('At least two images must be specified for mosaicking')
-        sys.exit()
+        raise ValueError('At least two images must be specified for mosaicking')
 
     beams = [tt.replace('image.fits', 'pb.fits') for tt in images]
     imagesR = [tt.replace('image.fits', 'imageR.fits') for tt in images]
     beamsR = [tt.replace('image.fits', 'pbR.fits') for tt in images]
 
     for tt in images:
-        if not os.path.exists(input_dir+'/'+tt):
+        try:
+            open(input_dir+'/'+tt)
+        except FileNotFoundError:
             log.error('File {0:s} does not exist'.format(input_dir+'/'+tt))
-            sys.exit()
+            raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+tt)) from None
 
     for bb in beams:
-        if not os.path.exists(input_dir+'/'+bb):
-            log.error('File {0:s} does not exist'.format(input_dir+'/'+bb))
-            sys.exit()
+        try:
+            open(input_dir+'/'+bb)
+        except FileNotFoundError:
+            log.error('File {0:s} does not exist'.format(input_dir+'/'+bb)) 
+            raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+bb)) from None
 
     log.info('All images and beams found on disc')
 
