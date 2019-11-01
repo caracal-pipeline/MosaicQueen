@@ -45,15 +45,14 @@ def main(argv):
         log.info('Target images = {}'.format(" ".join(args.target_images)))
         images = args.target_images
     else:
-        raise LookupError("Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
         log.error(
             "Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
-            # Still need this for the log file?
+        raise LookupError("Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
 
     # Throw an error if the user provides only one image
     if len(images) < 2:
-        raise ValueError('At least two images must be specified for mosaicking') 
-        log.error('At least two images must be specified for mosaicking') # Still need this for the log file?
+        log.error('At least two images must be specified for mosaicking')
+        raise ValueError('At least two images must be specified for mosaicking')
 
     beams = [tt.replace('image.fits', 'pb.fits') for tt in images]
     imagesR = [tt.replace('image.fits', 'imageR.fits') for tt in images]
@@ -63,15 +62,15 @@ def main(argv):
         try:
             open(input_dir+'/'+tt)
         except FileNotFoundError:
-            raise('File {0:s} does not exist'.format(input_dir+'/'+tt))
-            log.error('File {0:s} does not exist'.format(input_dir+'/'+tt)) # Still need this for the log file?
+            log.error('File {0:s} does not exist'.format(input_dir+'/'+tt))
+            raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+tt)) from None
 
     for bb in beams:
         try:
             open(input_dir+'/'+bb)
         except FileNotFoundError:
-            raise('File {0:s} does not exist'.format(input_dir+'/'+bb))
-            log.error('File {0:s} does not exist'.format(input_dir+'/'+bb)) # Still need this for the log file?
+            log.error('File {0:s} does not exist'.format(input_dir+'/'+bb)) 
+            raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+bb)) from None
 
     log.info('All images and beams found on disc')
 
