@@ -115,14 +115,14 @@ def check_for_regridded_files(output_dir, imagesR, beamsR):
             open(output_dir+'/'+cc)
         except FileNotFoundError:
             log.error('File {0:s} does not exist'.format(output_dir+'/'+cc))
-            raise FileNotFoundError('File {0:s} does not exist'.format(output_dir+'/'+cc)) from None
+            raise FileNotFoundError('File {0:s} does not exist'.format(output_dir+'/'+cc))
 
     for bb in beamsR:
         try:
             open(output_dir+'/'+bb)
         except FileNotFoundError:
             log.error('File {0:s} does not exist'.format(output_dir+'/'+bb))
-            raise FileNotFoundError('File {0:s} does not exist'.format(output_dir+'/'+bb)) from None
+            raise FileNotFoundError('File {0:s} does not exist'.format(output_dir+'/'+bb))
 
     log.info('All regridded images and beams found on disc')
 
