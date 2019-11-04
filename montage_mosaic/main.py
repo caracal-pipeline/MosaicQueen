@@ -13,6 +13,11 @@ import sys
 
 log = montage_mosaic.log
 
+# So that error handling is compatible with Python 2 as well as Python 3
+try:
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = IOError
 
 def main(argv):
 
