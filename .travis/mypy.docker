@@ -5,4 +5,4 @@ ENV USER root
 ADD . /code
 WORKDIR /code
 RUN pip install /code
-RUN mypy --ignore-missing-import montage_mosaic
+RUN mypy --ignore-missing-import MosaicSteward
