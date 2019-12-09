@@ -1,3 +1,3 @@
-### version 0.0.2
+### version 0.0.3
 
-- Changing sys.exit() commands to Exceptions
+- Renaming the package from montage_mosaic to MosaicSteward 

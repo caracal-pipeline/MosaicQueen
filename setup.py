@@ -10,8 +10,8 @@ requirements = [
 "montage-wrapper"
 ]
 
-PACKAGE_NAME = 'montage_mosaic'
-__version__ = '0.0.2'
+PACKAGE_NAME = 'MosaicSteward'
+__version__ = '0.0.3'
 
 setup(name = PACKAGE_NAME,
     version = __version__,
@@ -19,7 +19,7 @@ setup(name = PACKAGE_NAME,
     author = "Sarah White",
     author_email = "sarahwhite.astro@gmail.com",
     url = "https://github.com/svw26",
-    packages=["montage_mosaic"],
+    packages=["MosaicSteward"],
     install_requires = requirements,
     include_package_data = True,
     license=["GNU GPL v2"],
