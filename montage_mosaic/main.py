@@ -13,6 +13,11 @@ import sys
 
 log = montage_mosaic.log
 
+# So that error handling is compatible with Python 2 as well as Python 3
+try:
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = IOError
 
 def main(argv):
 
@@ -63,14 +68,14 @@ def main(argv):
             open(input_dir+'/'+tt)
         except FileNotFoundError:
             log.error('File {0:s} does not exist'.format(input_dir+'/'+tt))
-            raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+tt)) from None
+            raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+tt))
 
     for bb in beams:
         try:
             open(input_dir+'/'+bb)
         except FileNotFoundError:
             log.error('File {0:s} does not exist'.format(input_dir+'/'+bb)) 
-            raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+bb)) from None
+            raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+bb))
 
     log.info('All images and beams found on disc')
 
