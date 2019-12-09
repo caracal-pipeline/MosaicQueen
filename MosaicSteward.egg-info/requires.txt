@@ -1,0 +1,4 @@
+numpy
+futures
+astropy
+montage-wrapper
