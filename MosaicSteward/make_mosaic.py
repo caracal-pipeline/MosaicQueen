@@ -11,10 +11,10 @@ from sys import argv
 import sys
 import os
 import numpy as np
-import montage_mosaic
+import MosaicSteward
 import argparse
 
-log = montage_mosaic.log
+log = MosaicSteward.log
 
 # So that error handling is compatible with Python 2 as well as Python 3
 try:

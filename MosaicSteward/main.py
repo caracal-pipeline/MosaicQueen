@@ -5,13 +5,13 @@
 # Based on a mosaicking script by Paolo Serra (paolo80serra@gmail.com)
 # ------------------------------------------------------------------------------------------------------
 
-from montage_mosaic import make_mosaic
+from MosaicSteward import make_mosaic
 from argparse import ArgumentParser
-import montage_mosaic
+import MosaicSteward
 import os
 import sys
 
-log = montage_mosaic.log
+log = MosaicSteward.log
 
 # So that error handling is compatible with Python 2 as well as Python 3
 try:
