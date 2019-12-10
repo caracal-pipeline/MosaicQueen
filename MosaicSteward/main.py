@@ -11,7 +11,7 @@ import MosaicSteward
 import os
 import sys
 
-log = mosaic_steward.log
+log = MosaicSteward.log
 
 # So that error handling is compatible with Python 2 as well as Python 3
 try:

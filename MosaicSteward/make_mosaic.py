@@ -14,7 +14,7 @@ import numpy as np
 import MosaicSteward
 import argparse
 
-log = mosaic_steward.log
+log = MosaicSteward.log
 
 # So that error handling is compatible with Python 2 as well as Python 3
 try:
