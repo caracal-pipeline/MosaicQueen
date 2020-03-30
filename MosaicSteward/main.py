@@ -49,6 +49,8 @@ def main(argv):
     args = parser.parse_args(argv)
     input_dir = args.input
     mosaic_type = args.mosaic_type
+    hpbw_mode = args.hpbw_mode
+    specified_hpbw = args.set_hpbw
     cutoff = args.cutoff
     outname = args.name
     output_dir = args.output
@@ -86,7 +88,23 @@ def main(argv):
 
     log.info('All images and beams found on disc')
 
+    # Stage where uniform-resolution is 'applied' (if enabled)
+    if args.uniform_resolution:
+    
+        if hpbw_mode = 'auto':
 
+            #hpbw_to_use = make_mosaic.find_largest_BMAJ()
+
+        else:
+
+            hpbw_to_use = specified_hpbw
+
+    else:
+        log.info(
+                "Will use the 'native' synthesised beams of the input images, with no convolution to a single resolution before mosaicking. If uniform resolution across the input images is desired, before mosaicking, please enable 'uniform-resolution' and re-run this worker (with consideration of the related settings).")
+    
+        
+    # Ready for re-gridding
     if args.domontage:
         make_mosaic.use_montage_for_regridding(
             input_dir, output_dir, mosaic_type, images, beams, imagesR, beamsR, outname)
@@ -96,6 +114,7 @@ def main(argv):
 
     make_mosaic.check_for_regridded_files(output_dir, imagesR, beamsR)
 
+    # Now to mosaic
     make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname, imagesR, beamsR, cutoff, images)
 
     # Move the log file to the output directory
