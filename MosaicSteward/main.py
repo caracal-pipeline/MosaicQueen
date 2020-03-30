@@ -29,6 +29,13 @@ def main(argv):
                         help="State 'continuum' or 'spectral' as the type of mosaic to be made.")
     parser.add_argument("-d", "--domontage", action="store_true",
                         help="Use montage for regridding the images and beams.")
+    parser.add_argument("-u", "--uniform-resolution", action="store_true",
+                        help="Convolve all images and beams to a uniform resolution before mosaicking.")
+    parser.add_argument("-h", "--hpbw-mode", default="auto",
+                        help="State 'auto' or 'override' for determining the uniform resolution (HPBW) to be used (if enabled)."
+                             "The default is 'auto', meaning that the maximum HPBW across the input images will be found and used.")
+    parser.add_argument("-s", "--set-hpbw", type=float,
+                         help="Set the HPBW to use for uniform resolution, if wishing to override the 'auto' setting.")
     parser.add_argument("-c", "--cutoff", type=float, default=0.1,
                          help="The cutoff in the primary beam to use (assuming a Gaussian at the moment)."
                               "E.g. The default of 0.1 means going down to the 10 percent level for each pointing.")
