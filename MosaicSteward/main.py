@@ -92,7 +92,7 @@ def main(argv):
             input_dir, output_dir, mosaic_type, images, beams, imagesR, beamsR, outname)
     else:
         log.info(
-                "Will use mosaic header {0:s}.hdr and regridded images and beams available on disc. WARNING: We assume that the user is happy with the resolution used for these existing, regridded images. If not, please re-run this worker with 'domontage' enabled in order to redo the regridding.".format(outname))
+                "Will use mosaic header {0:s}.hdr and regridded images and beams available on disc. WARNING: We assume that the user is happy with the resolution used for these existing, regridded images. If not, please re-run this worker after a) enabling 'domontage' (in order to redo the regridding), and b) considering the settings associated with 'uniform-resolution'.".format(outname))
 
     make_mosaic.check_for_regridded_files(output_dir, imagesR, beamsR)
 
