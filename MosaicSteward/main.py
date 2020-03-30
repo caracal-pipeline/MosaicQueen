@@ -99,6 +99,10 @@ def main(argv):
 
             hpbw_to_use = specified_hpbw
 
+        #make_mosaic.generate_corrective_gaussian_and_convolve()
+    
+        # Need to ensure that the *convolved* images and primary beams are going to be passed to make_mosaic 
+
     else:
         log.info(
                 "Will use the 'native' synthesised beams of the input images, with no convolution to a single resolution before mosaicking. If uniform resolution across the input images is desired, before mosaicking, please enable 'uniform-resolution' and re-run this worker (with consideration of the related settings).")
@@ -113,6 +117,7 @@ def main(argv):
                 "Will use mosaic header {0:s}.hdr and regridded images and beams available on disc. WARNING: We assume that the user is happy with the resolution used for these existing, regridded images. If not, please re-run this worker after enabling 'uniform-resolution' and 'domontage' (in order to redo the regridding).".format(outname))
 
     make_mosaic.check_for_regridded_files(output_dir, imagesR, beamsR)
+
 
     # Now to mosaic
     make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname, imagesR, beamsR, cutoff, images)
