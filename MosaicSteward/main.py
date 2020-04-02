@@ -93,17 +93,23 @@ def main(argv):
     
         if hpbw_mode = 'auto':
 
-            #hpbw_to_use = make_mosaic.find_largest_BMAJ()
+            hpbw_to_use = make_mosaic.find_largest_BMAJ(input_dir, images, mosaic_type, 'images')
+            hpbw_to_use_arcsec = hpbw_to_use*3600.0   # Since BMAJ is (or should be) in units of deg 
+            log.info(
+                    "With hpbw-mode set to 'auto', the input images will be convolved so that they have a uniform resolution of {0:f} arcsec".format(hpbw_to_use_arcsec))
 
         else:
 
-            hpbw_to_use = specified_hpbw
+            hpbw_to_use_arcsec = float(specified_hpbw)  # User is asked to pass this value in units of arcsec
+            log.info(
+                    "With hpbw-mode set to 'override', the input images will be convolved so that they have a uniform resolution of {0:f} arcsec".format(hpbw_to_use_arcsec))
 
         #make_mosaic.generate_corrective_gaussian_and_convolve()
     
         # Need to ensure that the *convolved* images and primary beams are going to be passed to make_mosaic 
 
     else:
+
         log.info(
                 "Will use the 'native' synthesised beams of the input images, with no convolution to a single resolution before mosaicking. If uniform resolution across the input images is desired, before mosaicking, please enable 'uniform-resolution' and re-run this worker (with consideration of the related settings).")
     
