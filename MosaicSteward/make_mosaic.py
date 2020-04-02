@@ -197,7 +197,7 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname, ima
 
 def find_largest_BMAJ(input_dir, images, mosaic_type, data_type): 
 
-    # data_type is to allow this to be run over 'images' and 'beams' and still give useful log messages
+    # data_type is to allow this to be run over 'images' and 'regridded-images' and still give useful log messages
 
     # To save going through the headers of the images again, keep a record of the beam keywords
     # Will need to be 2D arrays, where the second axis is given by the number of images used as input
@@ -230,7 +230,7 @@ def find_largest_BMAJ(input_dir, images, mosaic_type, data_type):
 
     else:
 
-        #log.info('Checking the synthesised-beam information for spectral images')
+        log.info('Checking the synthesised-beam information for spectral {0:s}'.data_type)
 
         f = fits.open(input_dir+'/'+images[0])  # i.e. open the first input image
         head = f[0].header
@@ -260,6 +260,7 @@ def find_largest_BMAJ(input_dir, images, mosaic_type, data_type):
         print('BPA_array = ', BPA_array)
 
     largest_BMAJ = np.max(BMAJ_array)
+    log.info('Largest BMAJ value found amongst the input {0:s} is {1:f} (in units of deg)'.format(data_type,largest_BMAJ)) 
 
     return largest_BMAJ, BMAJ_array, BMIN_array, BPA_array 
 
