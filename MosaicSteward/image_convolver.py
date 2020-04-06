@@ -2,13 +2,26 @@
 # -*- coding: utf-8 -*-
 # flake8: noqa
 
-import argparse
+# ------------------------------------------------------------------------------------------------------
+# Author of package: Sarah White (sarahwhite.astro@gmail.com) and Sphe Makhathini (sphemakh@gmail.com)
+# This script based on a convolving script by Landman Bester (landman.bester@gmail.com)
+# ------------------------------------------------------------------------------------------------------
+
 import numpy as np
 from astropy.io import fits
-from africanus.model.spi.examples.utils import load_fits_contiguous, get_fits_freq_space_info, Gaussian2D
-from pypocketfft import r2c, c2r
+from africanus.model.spi.examples.utils import load_fits_contiguous, get_fits_freq_space_info, Gaussian2D  ### SO JUST NEED TO ADD AFRICANUS TO REQUIREMENTS?
+from pypocketfft import r2c, c2r   ### ADD PYPOCKETFFT TO REQUIREMENTS IN SETUP.PY TOO?
 iFs = np.fft.ifftshift
 Fs = np.fft.fftshift
+
+log = MosaicSteward.log
+
+# So that error handling is compatible with Python 2 as well as Python 3
+try:
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = IOError
+
 
 def create_parser():
     p = argparse.ArgumentParser(description='Simple spectral index fitting'
@@ -153,13 +166,6 @@ def main(args):
 
     
 
-    # save clean beam
-    hdu = fits.PrimaryHDU(header=hdr)
-    hdu.data = gausskern.T[:, ::-1].astype(np.float32)
-    name = outfile + '.clean_psf.fits'
-    hdu.writeto(name, overwrite=True)
-    print("Wrote clean psf to %s \n" % name)
-
     hdu = fits.PrimaryHDU(header=hdr)
     # save it
     if freq_axis == 3:
@@ -170,7 +176,6 @@ def main(args):
     hdu.writeto(name, overwrite=True)
     print("Wrote convolved model to %s \n" % name)
 
-    print("All done here")
 
     
 
