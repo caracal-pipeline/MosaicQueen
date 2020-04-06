@@ -2,7 +2,8 @@
 
 # ------------------------------------------------------------------------------------------------------
 # Author of package: Sarah White (sarahwhite.astro@gmail.com) and Sphe Makhathini (sphemakh@gmail.com)
-# Based on a mosaicking script by Paolo Serra (paolo80serra@gmail.com)
+# Based on a mosaicking script by Paolo Serra (paolo80serra@gmail.com) 
+# and a convolving script by Landman Bester (landman.bester@gmail.com)
 # ------------------------------------------------------------------------------------------------------
 
 from MosaicSteward import make_mosaic, image_convolver
