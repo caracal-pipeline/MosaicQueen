@@ -22,35 +22,10 @@ try:
 except NameError:
     FileNotFoundError = IOError
 
-
-def create_parser():
-    p = argparse.ArgumentParser(description='Simple spectral index fitting'
-                                            'tool.',
-                                formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument('-image', "--image", type=str, required=True)
-    p.add_argument('-o', '--output-filename', type=str,
-                   help="Path to output directory. \n"
-                        "Placed next to input model if outfile not provided.")
-    p.add_argument('-pp', '--psf-pars', default=None, nargs='+', type=float,
-                   help="Beam parameters matching FWHM of restoring beam "
-                        "specified as emaj emin pa. \n"
-                        "By default these are taken from the fits header "
-                        "of the residual image.")
-    p.add_argument('-ncpu', '--ncpu', default=0, type=int,
-                   help="Number of threads to use. \n"
-                        "Default of zero means use all threads")
-    p.add_argument('-cp', "--circ-psf", action="store_true",
-                   help="Passing this flag will convolve with a circularised "
-                   "beam instead of an elliptical one")
-    p.add_argument('-bm', '--beam-model', default=None, type=str,
-                   help="Fits beam model to use. \n"
-                        "Use power_beam_maker to make power beam "
-                        "corresponding to image. ")
-    p.add_argument('-pb-min', '--pb-min', type=float, default=0.05,
-                   help="Set image to zero where pb falls below this value")
-    return p
+# -------------------- Turning main.py from the original script into a function ------------------------ #
 
 def main(args):
+ 
     # read resolution of fits file
     hdr = fits.getheader(args.image)
     l_coord, m_coord, freqs, _, freq_axis = get_fits_freq_space_info(hdr)
@@ -138,22 +113,7 @@ def main(args):
 
     image = Fs(c2r(imhat, axes=ax, forward=False, lastsize=lastsize, inorm=2, nthreads=args.ncpu), axes=ax)[:, unpad_l, unpad_m]
 
-    # load beam and correct
-    if args.beam_model is not None:
-        bhdr = fits.getheader(args.beam_model)
-        l_coord_beam, m_coord_beam, freqs_beam, _, freq_axis = get_fits_freq_space_info(bhdr)
-        if not np.array_equal(l_coord_beam, l_coord):
-            raise ValueError("l coordinates of beam model do not match those of image. Use power_beam_maker to interpolate to fits header.")
-
-        if not np.array_equal(m_coord_beam, m_coord):
-            raise ValueError("m coordinates of beam model do not match those of image. Use power_beam_maker to interpolate to fits header.")
-
-        if not np.array_equal(freqs, freqs_beam):
-            raise ValueError("Freqs of beam model do not match those of image. Use power_beam_maker to interpolate to fits header.")
-
-        beam_image = load_fits_contiguous(args.beam_model)
-
-        image = np.where(beam_image >= args.pb_min, image/beam_image, 0.0)
+    ### BEAM CORRECTION DONE AT MOSAICKING STEP, SO REMOVED FROM HERE
 
     # save next to model if no outfile is provided
     if args.output_filename is None:
@@ -164,8 +124,6 @@ def main(args):
     else:
         outfile = args.output_filename
 
-    
-
     hdu = fits.PrimaryHDU(header=hdr)
     # save it
     if freq_axis == 3:
@@ -174,28 +132,10 @@ def main(args):
         hdu.data = np.transpose(image, axes=(0, 2, 1))[:, None, :, ::-1].astype(np.float32)
     name = outfile + '.convolved.fits'
     hdu.writeto(name, overwrite=True)
-    print("Wrote convolved model to %s \n" % name)
+    print("Wrote convolved image: %s \n" % name)
 
-
+    return
     
-
-if __name__ == "__main__":
-    args = create_parser().parse_args()
-
-    if not args.ncpu:
-        import multiprocessing
-        args.ncpu = multiprocessing.cpu_count()
-
-    print(' \n ')
-    GD = vars(args)
-    print('Input Options:')
-    for key in GD.keys():
-        print(key, ' = ', GD[key])
-
-    print(' \n ')
-
-    print("Using %i threads" % args.ncpu)
-
-    print(' \n ')
-
-    main(args)
+    
+    ### STUFF ABOUT MULTIPROCESSING MOVED TO MAIN.PY
+    
