@@ -121,9 +121,6 @@ def main(argv):
 
     if args.uniform_resolution:
      
-        # For the moment, assume psf-mode set to 'auto' so need to determine psf parameters from input
-        psf_to_use = make_mosaic.find_largest_BMAJ(input_dir, images, mosaic_type, 'images')
-
         if psf_mode = 'auto':
 
             psf_to_use = make_mosaic.find_largest_BMAJ(input_dir, images, mosaic_type, 'images')
@@ -132,6 +129,9 @@ def main(argv):
                     "With psf-mode set to 'auto', the input images will be convolved so that they "
                     "have a uniform resolution of {0:f} arcsec".format(psf_to_use_arcsec))
 
+            ### To simplify things for the moment, have the auto setting being to convolve with  cicularised beam
+            beampars = tuple([psf_to_use, psf_to_use, 0.0])  ### NOT SURE I'VE SET THIS UP RIGHT
+
         else:
             
             if args.psf_pars is None:
@@ -139,18 +139,22 @@ def main(argv):
                           "the user must specify the psf parameters to be used for convolution.")
                 raise TypeError("If wishing to override the 'auto' setting, "
                           "the user must specify the psf parameters to be used for convolution.")
+            else:
+                beampars = tuple(args.psf_pars)
 
-            psf_to_use_arcsec = float(specified_psf)  # User is asked to pass this value in units of arcsec
+            psf_to_use_arcsec = beampars[0]  # User is asked to pass this value in units of arcsec
             psf_to_use = psf_to_use_arcsec/3600.0  # Need to pass this to convolve_image in units of deg
             log.info(
                     "With psf-mode set to 'override', the input images will be convolved so that "
                     "they have a uniform resolution of {0:f} arcsec".format(psf_to_use_arcsec))
 
-        ### To simplify things for the moment, convolve with  cicularised beam
         if args.circ_psf:
-            beampars[0] = psf_to_use
-            beampars[1] = psf_to_use
+            log.info("WARNING: Enabling circularised beam. User must set circ-psf to 'False' if they "
+                     "want their 'emin' and 'pa' values set through psf-pars to be used.")
+            beampars[1] = beampars[0]  # If BPA is varying a lot over the input images, then best to set emin to emaj
+            beampars[2] = 0.0  # pa of psf set to zero
 
+         log.info("Beam paramters to be used: emaj = {}, emin = %3.2e, PA = %3.2e \n".format()) ### COME BACK TO FORMATTING
 
         #make_mosaic.generate_corrective_gaussian_and_convolve()
     
