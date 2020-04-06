@@ -5,7 +5,7 @@
 # Based on a mosaicking script by Paolo Serra (paolo80serra@gmail.com)
 # ------------------------------------------------------------------------------------------------------
 
-from MosaicSteward import make_mosaic
+from MosaicSteward import make_mosaic, image_convolver
 from argparse import ArgumentParser
 import MosaicSteward
 import os
@@ -53,9 +53,6 @@ def main(argv):
     parser.add_argument("-ncpu", '--ncpu', default=0, type=int,
                         help="Number of threads to use for convolution. \n"
                              "Default of zero means use all threads")
-    parser.add_argument("-cp", "--circ-psf", action="store_true",
-                        help="Passing this flag will convolve with a circularised "
-                             "beam instead of an elliptical one")
     parser.add_argument("-c", "--cutoff", type=float, default=0.1,
                         help="The cutoff in the primary beam to use (assuming a "
                              "Gaussian at the moment). \n"
@@ -154,11 +151,14 @@ def main(argv):
                 beampars[1] = beampars[0]  # If BPA is varying a lot over the input images, then best to set emin to emaj
                 beampars[2] = 0.0  # pa of psf set to zero
 
-         log.info("Psf paramters to be used: emaj = {0:.3f}, emin = {0:.3f}, PA = {0:.3f}".format(beampars[0], beampars[1], beampars[2])) ### COME FORMATTING
+        log.info("Psf paramters to be used: emaj = {0:.3f}, emin = {0:.3f}, PA = {0:.3f}".format(beampars[0], beampars[1], beampars[2])) ### CHECK FORMATTING
 
-        #make_mosaic.generate_corrective_gaussian_and_convolve()
+        #make_mosaic.generate_corrective_gaussian_and_convolve()  ### ABANDONED
+
+        for image in images:
+            image_convolver.convolve_image(input_dir, image, beampars, ncpu, )
     
-        # Need to ensure that the *convolved* images and primary beams are going to be passed to make_mosaic 
+        ### Need to ensure that the *convolved* images and primary beams are going to be passed to make_mosaic 
 
     else:
 
