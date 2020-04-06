@@ -24,39 +24,20 @@ except NameError:
 
 # -------------------- Turning main.py from the original script into a function ------------------------ #
 
-def main(args):
+def convolve_image(input_dir, imagename, beampars, ncpu):
  
     # read resolution of fits file
-    hdr = fits.getheader(args.image)
+    hdr = fits.getheader(input_dir+'/'+imagename)
     l_coord, m_coord, freqs, _, freq_axis = get_fits_freq_space_info(hdr)
     nchan = freqs.size
-    psf_pars = {}
-    for i in range(1,nchan+1):
-        key = 'BMAJ' + str(i)
-        if key in hdr.keys():
-            emaj = hdr[key]
-            emin = hdr['BMIN' + str(i)]
-            pa = hdr['BPA' + str(i)]
-            psf_pars[i] = (emaj, emin, pa)
-    
-    if len(psf_pars) == 0 and args.psf_pars is None:
-        raise ValueError("No psf parameters in fits file and none passed in.")
-    
-    if len(psf_pars) == 0:
-        print("No psf parameters in fits file. Convolving model to resolution specified by psf-pars.")
-        beampars = tuple(args.psf_pars)
-    else:
-        if args.psf_pars is None:
-            beampars = psf_pars[1]
-        else:
-            beampars = tuple(args.psf_pars)
-
-    if args.circ_psf:
-        e = (beampars[0] + beampars[1])/2.0
-        beampars[0] = e
-        beampars[1] = e
-    
-    print("Using emaj = %3.2e, emin = %3.2e, PA = %3.2e \n" % beampars)
+    #psf_pars = {}     ### psf parameters determined in main.py but this may be handy
+    #for i in range(1,nchan+1):
+    #    key = 'BMAJ' + str(i)
+    #    if key in hdr.keys():
+    #        emaj = hdr[key]
+    #        emin = hdr['BMIN' + str(i)]
+    #        pa = hdr['BPA' + str(i)]
+    #        psf_pars[i] = (emaj, emin, pa)
 
     # update header
     for i in range(1, nchan+1):
@@ -91,12 +72,12 @@ def main(args):
     # kernel of desired resolution
     gausskern = Gaussian2D(xx, yy, beampars)
     gausskern = np.pad(gausskern[None], padding, mode='constant')
-    gausskernhat = r2c(iFs(gausskern, axes=ax), axes=ax, forward=True, nthreads=args.ncpu, inorm=0)
+    gausskernhat = r2c(iFs(gausskern, axes=ax), axes=ax, forward=True, nthreads=ncpu, inorm=0)
 
     # FT of image
-    image = load_fits_contiguous(args.image)
+    image = load_fits_contiguous(input_dir+'/'+imagename)
     image = np.pad(image, padding, mode='constant')
-    imhat = r2c(iFs(image, axes=ax), axes=ax, forward=True, nthreads=args.ncpu, inorm=0)
+    imhat = r2c(iFs(image, axes=ax), axes=ax, forward=True, nthreads=ncpu, inorm=0)
 
     # convolve to desired resolution
     if len(psf_pars) == 0:
@@ -105,24 +86,20 @@ def main(args):
         for i in range(nchan):
             thiskern = Gaussian2D(xx, yy, psf_pars[i+1])
             thiskern = np.pad(thiskern[None], padding, mode='constant')
-            thiskernhat = r2c(iFs(thiskern, axes=ax), axes=ax, forward=True, nthreads=args.ncpu, inorm=0)
+            thiskernhat = r2c(iFs(thiskern, axes=ax), axes=ax, forward=True, nthreads=ncpu, inorm=0)
 
             convkernhat = np.where(np.abs(thiskernhat)>0.0, gausskernhat/thiskernhat, 0.0)
 
             imhat[i] *= convkernhat[0]
 
-    image = Fs(c2r(imhat, axes=ax, forward=False, lastsize=lastsize, inorm=2, nthreads=args.ncpu), axes=ax)[:, unpad_l, unpad_m]
+    image = Fs(c2r(imhat, axes=ax, forward=False, lastsize=lastsize, inorm=2, nthreads=ncpu), axes=ax)[:, unpad_l, unpad_m]
 
     ### BEAM CORRECTION DONE AT MOSAICKING STEP, SO REMOVED FROM HERE
 
-    # save next to model if no outfile is provided
-    if args.output_filename is None:
-        # strip .fits from model filename 
-        tmp = args.model[::-1]
-        idx = tmp.find('.')
-        outfile = args.model[0:-idx]
-    else:
-        outfile = args.output_filename
+    # Save next to input image if no outfile is provided
+    tmp = image[::-1]  ### CHECK THIS
+    idx = tmp.find('.')
+    outfile = args.model[0:-idx]
 
     hdu = fits.PrimaryHDU(header=hdr)
     # save it
@@ -130,12 +107,11 @@ def main(args):
         hdu.data = np.transpose(image, axes=(0, 2, 1))[None, :, :, ::-1].astype(np.float32)
     elif freq_axis == 4:
         hdu.data = np.transpose(image, axes=(0, 2, 1))[:, None, :, ::-1].astype(np.float32)
-    name = outfile + '.convolved.fits'
+    name = input_dir + '/' + outfile + '.convolved.fits'
     hdu.writeto(name, overwrite=True)
-    print("Wrote convolved image: %s \n" % name)
+    log.info("Wrote convolved image: {0:s}".format(name))
 
     return
-    
     
     ### STUFF ABOUT MULTIPROCESSING MOVED TO MAIN.PY
     
