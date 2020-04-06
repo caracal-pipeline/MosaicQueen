@@ -10,6 +10,7 @@ from argparse import ArgumentParser
 import MosaicSteward
 import os
 import sys
+import multiprocessing
 
 log = MosaicSteward.log
 
@@ -113,6 +114,12 @@ def main(argv):
     log.info('All images and beams found on disc')
 
     # Stage where uniform-resolution is 'applied' (if enabled)
+
+    # Multiprocessing to speed up convolution
+    if not args.ncpu:
+        args.ncpu = multiprocessing.cpu_count()
+    print("Using %i threads" % args.ncpu)
+
     if args.uniform_resolution:
      
         # For the moment, assume psf-mode set to 'auto' so need to determine psf parameters from input
