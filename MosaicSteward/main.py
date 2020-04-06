@@ -40,9 +40,6 @@ def main(argv):
                              "uniform resolution (psf) to be used (if enabled). \n"
                              "The default is 'auto', meaning that the largest psf "
                              "across the input images will be found and used.")
-    #parser.add_argument("-sp", "--set-psf", type=float, ### Degenerate with psf-pars
-    #                    help="Set the psf (in arcsec) to use for uniform resolution, "
-    #                         "if wishing to override the 'auto' setting.")
     parser.add_argument("-pp", "--psf-pars", default=None, nargs='+', type=float,
                         help="Beam parameters, specified as emaj emin pa, for the psf "
                              "to be used for enforcing uniform resolution, if wishing to " 
@@ -114,7 +111,7 @@ def main(argv):
     # Multiprocessing to speed up convolution
     if not args.ncpu:
         args.ncpu = multiprocessing.cpu_count()
-    print("Using %i threads" % args.ncpu)
+    log.info("Using {0:i} threads".format(args.ncpu))
 
     if args.uniform_resolution:
      
@@ -156,9 +153,9 @@ def main(argv):
         #make_mosaic.generate_corrective_gaussian_and_convolve()  ### ABANDONED
 
         for image in images:
-            image_convolver.convolve_image(input_dir, image, beampars, ncpu, )
+            image_convolver.convolve_image(input_dir, image, beampars, args.ncpu)
     
-        ### Need to ensure that the *convolved* images and primary beams are going to be passed to make_mosaic 
+        ### Need to ensure that the primary beams and *convolved* images are going to be passed to make_mosaic 
 
     else:
 
