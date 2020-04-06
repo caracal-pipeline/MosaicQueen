@@ -75,7 +75,6 @@ def main(argv):
     input_dir = args.input
     mosaic_type = args.mosaic_type
     psf_mode = args.psf_mode
-    #specified_psf = args.set_hpbw
     cutoff = args.cutoff
     outname = args.name
     output_dir = args.output
@@ -125,8 +124,6 @@ def main(argv):
         # For the moment, assume psf-mode set to 'auto' so need to determine psf parameters from input
         psf_to_use = make_mosaic.find_largest_BMAJ(input_dir, images, mosaic_type, 'images')
 
-
-
         if psf_mode = 'auto':
 
             psf_to_use = make_mosaic.find_largest_BMAJ(input_dir, images, mosaic_type, 'images')
@@ -136,11 +133,24 @@ def main(argv):
                     "have a uniform resolution of {0:f} arcsec".format(psf_to_use_arcsec))
 
         else:
+            
+            if args.psf_pars is None:
+                log.error("If wishing to override the 'auto' setting, "
+                          "the user must specify the psf parameters to be used for convolution.")
+                raise TypeError("If wishing to override the 'auto' setting, "
+                          "the user must specify the psf parameters to be used for convolution.")
 
             psf_to_use_arcsec = float(specified_psf)  # User is asked to pass this value in units of arcsec
+            psf_to_use = psf_to_use_arcsec/3600.0  # Need to pass this to convolve_image in units of deg
             log.info(
                     "With psf-mode set to 'override', the input images will be convolved so that "
                     "they have a uniform resolution of {0:f} arcsec".format(psf_to_use_arcsec))
+
+        ### To simplify things for the moment, convolve with  cicularised beam
+        if args.circ_psf:
+            beampars[0] = psf_to_use
+            beampars[1] = psf_to_use
+
 
         #make_mosaic.generate_corrective_gaussian_and_convolve()
     
