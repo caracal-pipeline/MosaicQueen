@@ -193,7 +193,7 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname, ima
 
     return
 
-# --------------------- New functions for enforcing uniform resolution --------------------- #
+# --------------------- New functions for uniform resolution --------------------- #
 
 def find_largest_BMAJ(input_dir, images, mosaic_type, data_type): 
 
@@ -224,9 +224,6 @@ def find_largest_BMAJ(input_dir, images, mosaic_type, data_type):
         print('BMAJ_array = ', BMAJ_array)  ### JUST TO CHECK 
         print('BMIN_array = ', BMIN_array)
         print('BPA_array = ', BPA_array)
-
-        #largest_BMAJ_arcsec = largest_BMAJ*3600.0  # Since BMAJ is in units of deg  ### THESE TWO LINES SHOULD REALLY GO IN MAIN
-        #log.info("With hpbw-mode set to 'auto', the input will be corrected so that they have a uniform resolution of {0:f} arcsec".format(largest_BMAJ_arcsec))
 
     else:
 
@@ -263,6 +260,12 @@ def find_largest_BMAJ(input_dir, images, mosaic_type, data_type):
     log.info('Largest BMAJ value found amongst the input {0:s} is {1:f} (in units of deg)'.format(data_type,largest_BMAJ)) 
 
     return largest_BMAJ, BMAJ_array, BMIN_array, BPA_array 
+
+
+#def generate_corrective_gaussian_and_convolve(input_dir, images, largest_BMAJ, BMAJ_array, BMIN_array, BPA_array, mosaic_type):
+
+#    return
+
 
 
 
