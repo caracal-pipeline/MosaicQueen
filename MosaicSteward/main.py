@@ -129,8 +129,8 @@ def main(argv):
                     "With psf-mode set to 'auto', the input images will be convolved so that they "
                     "have a uniform resolution of {0:f} arcsec".format(psf_to_use_arcsec))
 
-            ### To simplify things for the moment, have the auto setting being to convolve with  cicularised beam
-            beampars = tuple([psf_to_use, psf_to_use, 0.0])  ### NOT SURE I'VE SET THIS UP RIGHT
+            ### To simplify things for the moment, have the 'auto' setting being to convolve with  cicularised beam
+            beampars = tuple([psf_to_use, psf_to_use, 0.0])  ### CHECK I'VE SET THIS UP RIGHT
 
         else:
             
@@ -148,13 +148,13 @@ def main(argv):
                     "With psf-mode set to 'override', the input images will be convolved so that "
                     "they have a uniform resolution of {0:f} arcsec".format(psf_to_use_arcsec))
 
-        if args.circ_psf:
-            log.info("WARNING: Enabling circularised beam. User must set circ-psf to 'False' if they "
-                     "want their 'emin' and 'pa' values set through psf-pars to be used.")
-            beampars[1] = beampars[0]  # If BPA is varying a lot over the input images, then best to set emin to emaj
-            beampars[2] = 0.0  # pa of psf set to zero
+            if args.circ_psf:  ### 'auto' setting is a circularised beam, so no warning needed
+                log.info("WARNING: Enabling circularised beam. User must set circ-psf to 'False' if they "
+                         "want their 'emin' and 'pa' values set through psf-pars to be used.")
+                beampars[1] = beampars[0]  # If BPA is varying a lot over the input images, then best to set emin to emaj
+                beampars[2] = 0.0  # pa of psf set to zero
 
-         log.info("Beam paramters to be used: emaj = {}, emin = %3.2e, PA = %3.2e \n".format()) ### COME BACK TO FORMATTING
+         log.info("Psf paramters to be used: emaj = {0:.3f}, emin = {0:.3f}, PA = {0:.3f}".format(beampars[0], beampars[1], beampars[2])) ### COME FORMATTING
 
         #make_mosaic.generate_corrective_gaussian_and_convolve()
     
