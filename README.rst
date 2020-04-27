@@ -8,3 +8,7 @@ pip install MosaicSteward
 ```
 
 Work in progress: convolution of input images to a common synthesised beam before mosaicking, and employing parallel processing to speed this up...
+
+.. |Pypi Version| image:: https://img.shields.io/pypi/v/MosaicSteward.svg
+                  :target: https://pypi.org/project/MosaicSteward/
+                  :alt:
