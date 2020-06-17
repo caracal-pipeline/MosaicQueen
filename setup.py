@@ -7,7 +7,8 @@ requirements = [
 "numpy",
 "futures",
 "astropy",
-"montage-wrapper"
+"montage-wrapper",
+"codex-africanus[dask]"
 ]
 
 PACKAGE_NAME = 'MosaicSteward'

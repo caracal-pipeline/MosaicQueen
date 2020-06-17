@@ -4,10 +4,11 @@
 
 # ------------------------------------------------------------------------------------------------------
 # Author of package: Sarah White (sarahwhite.astro@gmail.com) and Sphe Makhathini (sphemakh@gmail.com)
-# This script based on a convolving script by Landman Bester (landman.bester@gmail.com)
+# This is script based on a convolving script by Landman Bester (landman.bester@gmail.com)
 # ------------------------------------------------------------------------------------------------------
 
 import numpy as np
+import africanus
 from astropy.io import fits
 from africanus.model.spi.examples.utils import load_fits_contiguous, get_fits_freq_space_info, Gaussian2D  ### SO JUST NEED TO ADD AFRICANUS TO REQUIREMENTS?
 from pypocketfft import r2c, c2r   ### ADD PYPOCKETFFT TO REQUIREMENTS IN SETUP.PY TOO?
