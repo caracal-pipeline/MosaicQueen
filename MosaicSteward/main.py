@@ -151,8 +151,6 @@ def main(argv):
 
         log.info("Psf paramters to be used: emaj = {0:.3f}, emin = {0:.3f}, PA = {0:.3f}".format(beampars[0], beampars[1], beampars[2])) ### CHECK FORMATTING
 
-        #make_mosaic.generate_corrective_gaussian_and_convolve()  ### ABANDONED
-
         for image in images:
             image_convolver.convolve_image(input_dir, image, beampars, args.ncpu)
     

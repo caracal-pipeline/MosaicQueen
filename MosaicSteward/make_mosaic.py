@@ -262,10 +262,3 @@ def find_largest_BMAJ(input_dir, images, mosaic_type, data_type):
     return largest_BMAJ, BMAJ_array, BMIN_array, BPA_array 
 
 
-#def generate_corrective_gaussian_and_convolve(input_dir, images, largest_BMAJ, BMAJ_array, BMIN_array, BPA_array, mosaic_type):
-
-#    return
-
-
-
-
