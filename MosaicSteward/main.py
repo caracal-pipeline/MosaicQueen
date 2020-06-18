@@ -156,12 +156,6 @@ def main(argv):
                     "With psf-mode set to 'override', the input images will be convolved so that "
                     "they have a uniform resolution of {0:f} arcsec".format(psf_to_use_arcsec))
 
-            if args.circ_psf:  ### 'auto' setting is a circularised beam, so no warning needed
-                log.info("WARNING: Enabling circularised beam. User must set circ-psf to 'False' if they "
-                         "want their 'bmin' and 'bpa' values set through psf-pars to be used.")
-                beampars[1] = beampars[0]  # If BPA is varying a lot over the input images, then best to set emin to emaj
-                beampars[2] = 0.0  # pa of psf set to zero
-
         elif psf_mode = 'scaled':
 
             ### CODE UP THIS OPTION LAST
@@ -170,6 +164,13 @@ def main(argv):
 
             log.error("{0:s} is not a valid option for psf-mode".format(psf_mode))
             raise ValueError("{0:s} is not a valid option for psf-mode".format(psf_mode))
+
+        if args.circ_psf:  # For each of the psf-modes it should be possible to force the psf to be circular
+            log.info("WARNING: Enabling circularised beam. User must set circ-psf to 'False' if they want the "
+                     "automatically-determined 'bmin' and 'bpa' values (or those set through psf-pars) to be used.")
+            beampars[1] = beampars[0]  # If BPA is varying a lot over the input images, then best to set bmin to bmaj
+            beampars[2] = 0.0  # pa of psf set to zero
+
 
 
         log.info("Psf paramters to be used: emaj = {0:.3f}, emin = {0:.3f}, PA = {0:.3f}".format(beampars[0], beampars[1], beampars[2])) ### CHECK FORMATTING
