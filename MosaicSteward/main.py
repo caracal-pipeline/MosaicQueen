@@ -117,6 +117,7 @@ def main(argv):
 
 
     ## Stage where images are convolved (if convolve-images is enabled)
+    
     # Multiprocessing to speed up convolution
     if not args.ncpu:
         args.ncpu = multiprocessing.cpu_count()
@@ -126,24 +127,27 @@ def main(argv):
      
         if psf_mode = 'auto':
 
+            ### COME BACK TO THIS LATER ONCE 'UNIFORM' IS WORKING
+
+        elif psf_mode = 'uniform':    
+
             psf_to_use = make_mosaic.find_largest_BMAJ(input_dir, images, mosaic_type, 'images')
             psf_to_use_arcsec = psf_to_use*3600.0   # Since BMAJ is (or should be) in units of deg 
             log.info(
-                    "With psf-mode set to 'auto', the input images will be convolved so that they "
-                    "have a uniform resolution of {0:f} arcsec".format(psf_to_use_arcsec))
+                    "With psf-mode set to 'uniform', the input images will be convolved so that they "
+                    "have a uniform resolution of {0:f} arcsec (for each freq channel, if the images "
+                    "are cubes)".format(psf_to_use_arcsec))
 
-            ### To simplify things for the moment, have the 'auto' setting being to convolve with cicularised beam
+            ### To simplify things for the moment, have the 'uniform' setting being to convolve with cicularised beam
             beampars = tuple([psf_to_use, psf_to_use, 0.0])  ### CHECK I'VE SET THIS UP RIGHT
-
-        else:
             
             if args.psf_pars is None:
-                log.error("If wishing to override the 'auto' setting, "
-                          "the user must specify the psf parameters to be used for convolution.")
-                raise TypeError("If wishing to override the 'auto' setting, "
-                          "the user must specify the psf parameters to be used for convolution.")
+                log.info("WARNING: If wishing to override the default psf determined for the 'uniform' setting, "
+                         "the user must specify the psf parameters to be used for convolution via 'psf-pars'.")
+                log.info("Proceeding with the largest psf found amongst (all channels of) all input images.")
             else:
                 beampars = tuple(args.psf_pars)
+                log.info("Proceeding with the psf parameters specified via 'psf-pars'.")
 
             psf_to_use_arcsec = beampars[0]  # User is asked to pass this value in units of arcsec
             psf_to_use = psf_to_use_arcsec/3600.0  # Need to pass this to convolve_image in units of deg
@@ -153,9 +157,19 @@ def main(argv):
 
             if args.circ_psf:  ### 'auto' setting is a circularised beam, so no warning needed
                 log.info("WARNING: Enabling circularised beam. User must set circ-psf to 'False' if they "
-                         "want their 'emin' and 'pa' values set through psf-pars to be used.")
+                         "want their 'bmin' and 'bpa' values set through psf-pars to be used.")
                 beampars[1] = beampars[0]  # If BPA is varying a lot over the input images, then best to set emin to emaj
                 beampars[2] = 0.0  # pa of psf set to zero
+
+        elif psf_mode = 'scaled':
+
+            ### CODE UP THIS OPTION LAST
+        
+        else:
+
+            log.error("{0:s} is not a valid option for psf-mode".format(psf_mode))
+            raise ValueError("{0:s} is not a valid option for psf-mode".format(psf_mode))
+
 
         log.info("Psf paramters to be used: emaj = {0:.3f}, emin = {0:.3f}, PA = {0:.3f}".format(beampars[0], beampars[1], beampars[2])) ### CHECK FORMATTING
 
