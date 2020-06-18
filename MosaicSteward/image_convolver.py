@@ -43,6 +43,7 @@ def load_fits_contiguous(name):
 def get_fits_freq_space_info(hdr):
     
     if hdr['CUNIT1'].lower() != "deg":
+        log.error("Image coordinates must be in degrees")
         raise ValueError("Image coordinates must be in degrees")
     npix_l = hdr['NAXIS1']
     refpix_l = hdr['CRPIX1']
@@ -50,6 +51,7 @@ def get_fits_freq_space_info(hdr):
     l_coord = np.arange(1 - refpix_l, 1 + npix_l - refpix_l)*delta_l
 
     if hdr['CUNIT2'].lower() != "deg":
+        log.error("Image coordinates must be in degrees")
         raise ValueError("Image coordinates must be in degrees")
     npix_m = hdr['NAXIS2']
     refpix_m = hdr['CRPIX2']
@@ -72,10 +74,12 @@ def get_fits_freq_space_info(hdr):
         ref_freq = hdr['CRVAL3']
         ncorr = hdr['NAXIS4']
     else:
+        log.error("Freq axis must be 3rd or 4th")
         raise ValueError("Freq axis must be 3rd or 4th")
 
     if ncorr > 1:
-        raise ValueError("Only Stokes I cubes supported")
+        log.error("Only Stokes-I cubes supported")
+        raise ValueError("Only Stokes-I cubes supported")
 
     freqs = ref_freq + np.arange(1 - refpix_nu,
                                  1 + nband - refpix_nu) * delta_nu
