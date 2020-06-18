@@ -125,19 +125,19 @@ def main(argv):
     log.info("Using {0:i} threads".format(args.ncpu))
 
     if args.convolve_images:
+
+        log.info("Images are to be convolved before mosaicking them together.")
      
         if psf_mode = 'auto':
 
+            log.info("The 'psf-mode' parameter has been set to 'auto'.")
             ### COME BACK TO THIS LATER ONCE 'UNIFORM' IS WORKING
 
         elif psf_mode = 'uniform':    
 
+            log.info("The 'psf-mode' parameter has been set to 'uniform'.")
             psf_to_use = make_mosaic.find_largest_BMAJ(input_dir, images, mosaic_type, 'images')
             psf_to_use_arcsec = psf_to_use*3600.0   # Since BMAJ is (or should be) in units of deg 
-            log.info(
-                    "With psf-mode set to 'uniform', the input images will be convolved so that they "
-                    "have a uniform resolution of {0:f} arcsec (for each freq channel, if the images "
-                    "are cubes)".format(psf_to_use_arcsec))
 
             ### To simplify things for the moment, have the 'uniform' setting being to convolve with cicularised beam
             beampars = tuple([psf_to_use, psf_to_use, 0.0])  ### CHECK I'VE SET THIS UP RIGHT
@@ -156,8 +156,14 @@ def main(argv):
                     "With psf-mode set to 'override', the input images will be convolved so that "
                     "they have a uniform resolution of {0:f} arcsec".format(psf_to_use_arcsec))
 
+            log.info(
+                    "With psf-mode set to 'uniform', the input images will be convolved so that they "
+                    "have a uniform resolution of {0:f} arcsec (for each freq channel, if the images "
+                    "are cubes)".format(psf_to_use_arcsec))
+
         elif psf_mode = 'scaled':
 
+            log.info("The 'psf-mode' parameter has been set to 'scaled'.")
             ### CODE UP THIS OPTION LAST
         
         else:
