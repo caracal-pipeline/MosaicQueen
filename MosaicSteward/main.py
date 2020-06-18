@@ -152,14 +152,10 @@ def main(argv):
 
             psf_to_use_arcsec = beampars[0]  # User is asked to pass this value in units of arcsec
             psf_to_use = psf_to_use_arcsec/3600.0  # Need to pass this to convolve_image in units of deg
-            log.info(
-                    "With psf-mode set to 'override', the input images will be convolved so that "
-                    "they have a uniform resolution of {0:f} arcsec".format(psf_to_use_arcsec))
 
             log.info(
-                    "With psf-mode set to 'uniform', the input images will be convolved so that they "
-                    "have a uniform resolution of {0:f} arcsec (for each freq channel, if the images "
-                    "are cubes)".format(psf_to_use_arcsec))
+                    "The input images will be convolved so that they have a uniform resolution of "
+                    "{0:f} arcsec (for each freq channel, if the images are cubes)".format(psf_to_use_arcsec))
 
         elif psf_mode = 'scaled':
 
