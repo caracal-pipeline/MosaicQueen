@@ -8,8 +8,8 @@ requirements = [
 "futures",
 "astropy",
 "montage-wrapper",
-"codex-africanus[dask]"
-]
+"ducc0"
+] # ducc0 needed for accessing pypocketfft
 
 PACKAGE_NAME = 'MosaicSteward'
 __version__ = '0.0.3'
