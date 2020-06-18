@@ -33,9 +33,8 @@ def main(argv):
                              "mosaic to be made.")
     parser.add_argument("-d", "--domontage", action="store_true",
                         help="Use montage for regridding the images and beams.")
-    parser.add_argument("-u", "--uniform-resolution", action="store_true",
-                        help="Convolve all images and beams to a uniform "
-                             "resolution before mosaicking.")
+    parser.add_argument("-ci", "--convolve-images", action="store_true",
+                        help="Convolve all images and beams before mosaicking.")
     parser.add_argument("-pm", "--psf-mode", default="auto",
                         help="State 'auto' or 'override' for determining the "
                              "uniform resolution (psf) to be used (if enabled). \n"
@@ -48,11 +47,11 @@ def main(argv):
                              "These should be specified as: bmaj bmin bpa, for "
                              "enforcing uniform resolution across all images.")
     parser.add_argument("-cp", "--circ-psf", action="store_true",
-                        help="Passing this flag will convolve with a circularised "
-                             "beam instead of an elliptical one.")
+                        help="Pass this flag in order to convolve with a circularised "
+                             "psf instead of an elliptical one.")
     parser.add_argument("-ncpu", '--ncpu', default=0, type=int,
                         help="Number of threads to use for convolution. \n"
-                             "Default of zero means use all threads")
+                             "Default of zero means use all threads.")
     parser.add_argument("-c", "--cutoff", type=float, default=0.1,
                         help="The cutoff in the primary beam to use (assuming a "
                              "Gaussian at the moment). \n"
@@ -110,13 +109,13 @@ def main(argv):
     log.info('All images and beams found on disc')
 
 
-    ## Stage where uniform-resolution is 'applied' (if enabled)
+    ## Stage where images are convolved (if convolve-images is enabled)
     # Multiprocessing to speed up convolution
     if not args.ncpu:
         args.ncpu = multiprocessing.cpu_count()
     log.info("Using {0:i} threads".format(args.ncpu))
 
-    if args.uniform_resolution:
+    if args.convolve_images:
      
         if psf_mode = 'auto':
 
