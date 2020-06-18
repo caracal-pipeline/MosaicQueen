@@ -36,10 +36,17 @@ def main(argv):
     parser.add_argument("-ci", "--convolve-images", action="store_true",
                         help="Convolve all images and beams before mosaicking.")
     parser.add_argument("-pm", "--psf-mode", default="auto",
-                        help="State 'auto' or 'override' for determining the "
-                             "uniform resolution (psf) to be used (if enabled). \n"
-                             "The default is 'auto', meaning that the largest psf "
-                             "across the input images will be found and used.")
+                        help="If 'convolve-images' is enabled, then 'psf-mode' "
+                             "dictates how the psf, used for convolution, is "
+                             "determined/applied. \n"
+                             "Options are 'auto' (for each freq channel, apply "
+                             "the largest psf found across the input images), "
+                             "'uniform' (find the largest psf across the input "
+                             "images and apply this same psf to all freq channels), "
+                             "and 'scaled' (similar to 'auto' but where a 1/freq "
+                             "function is fitted to the bmaj values, in order to "
+                             "identify and exclude outliers). \n"
+                             "The default setting is 'auto'.")
     parser.add_argument("-pp", "--psf-pars", default=None, nargs='+', type=float,
                         help="If 'psf-mode' is set to 'uniform', then the default psf "
                              "(based on the largest psf across the input images) "
