@@ -51,7 +51,8 @@ def main(argv):
                         help="If 'psf-mode' is set to 'uniform', then the default psf "
                              "(based on the largest psf across the input images) "
                              "can be overridden by setting psf parameters here. \n"
-                             "These should be specified as: bmaj bmin bpa, for "
+                             "These should be specified as: bmaj bmin bpa (in units "
+                             "of arcsec, arcsec, deg). These values will be used for "
                              "enforcing uniform resolution across all images.")
     parser.add_argument("-cp", "--circ-psf", action="store_true",
                         help="Pass this flag in order to convolve with a circularised "
