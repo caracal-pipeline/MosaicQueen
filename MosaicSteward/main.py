@@ -42,9 +42,11 @@ def main(argv):
                              "The default is 'auto', meaning that the largest psf "
                              "across the input images will be found and used.")
     parser.add_argument("-pp", "--psf-pars", default=None, nargs='+', type=float,
-                        help="Beam parameters, specified as emaj emin pa, for the psf "
-                             "to be used for enforcing uniform resolution, if wishing to " 
-                             "override the 'auto' setting.")
+                        help="If 'psf-mode' is set to 'uniform', then the default psf "
+                             "(based on the largest psf across the input images) "
+                             "can be overridden by setting psf parameters here. \n"
+                             "These should be specified as: bmaj bmin bpa, for "
+                             "enforcing uniform resolution across all images.")
     parser.add_argument("-cp", "--circ-psf", action="store_true",
                         help="Passing this flag will convolve with a circularised "
                              "beam instead of an elliptical one.")
@@ -107,8 +109,8 @@ def main(argv):
 
     log.info('All images and beams found on disc')
 
-    # Stage where uniform-resolution is 'applied' (if enabled)
 
+    ## Stage where uniform-resolution is 'applied' (if enabled)
     # Multiprocessing to speed up convolution
     if not args.ncpu:
         args.ncpu = multiprocessing.cpu_count()
@@ -124,7 +126,7 @@ def main(argv):
                     "With psf-mode set to 'auto', the input images will be convolved so that they "
                     "have a uniform resolution of {0:f} arcsec".format(psf_to_use_arcsec))
 
-            ### To simplify things for the moment, have the 'auto' setting being to convolve with  cicularised beam
+            ### To simplify things for the moment, have the 'auto' setting being to convolve with cicularised beam
             beampars = tuple([psf_to_use, psf_to_use, 0.0])  ### CHECK I'VE SET THIS UP RIGHT
 
         else:
@@ -165,7 +167,7 @@ def main(argv):
                 "this worker (with consideration of the related settings).")
     
         
-    # Ready for re-gridding
+    ## Ready for re-gridding
     if args.domontage:
         make_mosaic.use_montage_for_regridding(
             input_dir, output_dir, mosaic_type, images, beams, imagesR, beamsR, outname)
@@ -179,10 +181,10 @@ def main(argv):
     make_mosaic.check_for_regridded_files(output_dir, imagesR, beamsR)
 
 
-    # Now to mosaic
+    ## Now to mosaic
     make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname, imagesR, beamsR, cutoff, images)
 
-    # Move the log file to the output directory
+    ## Move the log file to the output directory
     os.system('mv log-make_mosaic.txt '+output_dir+'/')
 
     return 0
