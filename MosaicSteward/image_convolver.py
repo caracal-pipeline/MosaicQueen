@@ -4,12 +4,12 @@
 
 # ------------------------------------------------------------------------------------------------------
 # Author of package: Sarah White (sarahwhite.astro@gmail.com) and Sphe Makhathini (sphemakh@gmail.com)
-# This is script based on a convolving script by Landman Bester (landman.bester@gmail.com)
+# This script is based on a convolving script by Landman Bester (landman.bester@gmail.com)
 # ------------------------------------------------------------------------------------------------------
 
 import numpy as np
 from astropy.io import fits
-from pypocketfft import r2c, c2r
+from ducc.fft import r2c, c2r  ### replaced pypocketfft with ducc.fft
 iFs = np.fft.ifftshift
 Fs = np.fft.fftshift
 
