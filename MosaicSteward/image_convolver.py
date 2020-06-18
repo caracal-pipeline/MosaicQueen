@@ -163,10 +163,10 @@ def convolve_image(input_dir, imagename, beampars, ncpu):
     ax = (1, 2)  # axes over which to perform fft
     lastsize = npix_m + np.sum(padding[-1])
 
-    # kernel of desired resolution
-    gausskern = Gaussian2D(xx, yy, beampars)
-    gausskern = np.pad(gausskern[None], padding, mode='constant')
-    gausskernhat = r2c(iFs(gausskern, axes=ax), axes=ax, forward=True, nthreads=ncpu, inorm=0)
+    ## kernel of desired resolution  ### ORIGINAL LOCATION
+    #gausskern = Gaussian2D(xx, yy, beampars)
+    #gausskern = np.pad(gausskern[None], padding, mode='constant')
+    #gausskernhat = r2c(iFs(gausskern, axes=ax), axes=ax, forward=True, nthreads=ncpu, inorm=0)
 
     # FT of image
     image = load_fits_contiguous(input_dir+'/'+imagename)
@@ -178,6 +178,12 @@ def convolve_image(input_dir, imagename, beampars, ncpu):
         imhat *= gausskernhat
     else:
         for i in range(nchan):
+
+            # kernel of desired resolution   ### WHY MOVED HERE? GAUSSKERNHAT IS NOW DEFINED TOO LATE
+            gausskern = Gaussian2D(xx, yy, beampars)
+            gausskern = np.pad(gausskern[None], padding, mode='constant')
+            gausskernhat = r2c(iFs(gausskern, axes=ax), axes=ax, forward=True, nthreads=ncpu, inorm=0)
+
             thiskern = Gaussian2D(xx, yy, psf_pars[i+1])
             thiskern = np.pad(thiskern[None], padding, mode='constant')
             thiskernhat = r2c(iFs(thiskern, axes=ax), axes=ax, forward=True, nthreads=ncpu, inorm=0)
