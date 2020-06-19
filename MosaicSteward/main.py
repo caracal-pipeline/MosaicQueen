@@ -200,10 +200,10 @@ def main(argv):
     else:
 
         log.info(
-                "Will use the 'native' synthesised beams of the input images, with no convolution "
-                "to a single resolution before mosaicking. If uniform resolution across the input "
-                "images is desired, before mosaicking, please enable 'uniform-resolution' and re-run "
-                "this worker (with consideration of the related settings).")
+                "Will use the 'native' synthesised beams (i.e. psfs) of the input images, with no convolution "
+                "to a common resolution before mosaicking. If convolution of the input images (before "
+                "mosaicking) is desired, please enable 'convolve-images' and re-run (with consideration "
+                "of the related settings, e.g. 'psf-mode').")
     
         
     ## Ready for re-gridding
