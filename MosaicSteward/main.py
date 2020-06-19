@@ -148,7 +148,7 @@ def main(argv):
                 log.info("WARNING: If wishing to override the default psf determined for the 'uniform' setting, "
                          "the user must specify the psf parameters to be used for convolution via 'psf-pars'.")
                 log.info("Proceeding with the largest psf found amongst (all channels of) all input images.")
-                psf_to_use = make_mosaic.find_largest_BMAJ(input_dir, images, mosaic_type, 'images')
+                psf_to_use = image_convolver.find_largest_BMAJ(input_dir, images, mosaic_type, 'images')
                 psf_to_use_arcsec = psf_to_use*3600.0   # Since BMAJ is (or should be) in units of deg
 
                 ### To simplify things for the moment, have the 'uniform' setting being to convolve with cicularised beam
