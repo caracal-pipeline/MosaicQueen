@@ -171,6 +171,23 @@ def find_largest_BMAJ(input_dir, images, mosaic_type, data_type):
             f = fits.open(input_dir+'/'+ii)
             head = f[0].header
 
+            for channel_index in range(n_channels): 
+                channel_number = str(channel_index + 1)  # Since the first channel number/label is '1'
+                BMAJ_array[index_image][channel_index] = float(head['BMAJ'+channel_number])  
+                BMIN_array[index_image][channel_index] = float(head['BMIN'+channel_number])
+                BPA_array[index_image][channel_index] = float(head['BPA'+channel_number])
+
+            index_image += 1
+
+        print('BMAJ_array = ', BMAJ_array)  ### JUST TO CHECK 
+        print('BMIN_array = ', BMIN_array)
+        print('BPA_array = ', BPA_array)
+
+    largest_BMAJ = np.max(BMAJ_array)
+    log.info('Largest BMAJ value found amongst the input {0:s} is {1:f} (in units of deg)'.format(data_type,largest_BMAJ)) 
+
+    return largest_BMAJ, BMAJ_array, BMIN_array, BPA_array 
+
 
 
 # -------------------- Turning main.py from the original script into a function ------------------------ #
