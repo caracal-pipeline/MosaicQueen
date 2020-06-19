@@ -130,11 +130,6 @@ def main(argv):
 
         log.info("Images are to be convolved before mosaicking them together.")
 
-        if psf_mode is None: # i.e. user has enabled convolution but not considered the related settings
-
-            psf_mode = 'auto'
-            log.info("'psf-mode' was not specified, so proceeding with the default for this parameter: 'auto'.") 
-     
         if psf_mode == 'auto':
 
             log.info("The 'psf-mode' parameter has been set to 'auto'.")
