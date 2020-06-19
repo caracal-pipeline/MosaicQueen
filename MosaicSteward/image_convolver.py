@@ -9,7 +9,7 @@
 
 import numpy as np
 from astropy.io import fits
-from ducc.fft import r2c, c2r  ### replaced pypocketfft with ducc.fft
+from ducc0.fft import r2c, c2r  ### replaced pypocketfft with ducc.fft
 iFs = np.fft.ifftshift
 Fs = np.fft.fftshift
 
