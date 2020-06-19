@@ -193,7 +193,7 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname, ima
 
     return
 
-# --------------------- New functions for uniform resolution --------------------- #
+# --------------------- New function for uniform resolution ---------------------- #
 
 def find_largest_BMAJ(input_dir, images, mosaic_type, data_type): 
 
@@ -221,9 +221,9 @@ def find_largest_BMAJ(input_dir, images, mosaic_type, data_type):
             BPA_array[index_image][0] = float(head['BPA'])
             index_image += 1
 
-        print('BMAJ_array = ', BMAJ_array)  ### JUST TO CHECK 
-        print('BMIN_array = ', BMIN_array)
-        print('BPA_array = ', BPA_array)
+        #print('BMAJ_array = ', BMAJ_array)  ### FOR CHECKING 
+        #print('BMIN_array = ', BMIN_array)
+        #print('BPA_array = ', BPA_array)
 
     else:
 
