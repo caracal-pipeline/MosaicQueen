@@ -122,7 +122,7 @@ def main(argv):
     # Multiprocessing to speed up convolution
     if not args.ncpu:
         args.ncpu = multiprocessing.cpu_count()
-    log.info("Using {0:i} threads".format(args.ncpu))
+    log.info("Using {0:d} threads".format(args.ncpu))
 
     if args.convolve_images:
 
