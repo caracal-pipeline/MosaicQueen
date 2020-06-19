@@ -140,21 +140,24 @@ def main(argv):
         elif psf_mode = 'uniform':    
 
             log.info("The 'psf-mode' parameter has been set to 'uniform'.")
-            psf_to_use = make_mosaic.find_largest_BMAJ(input_dir, images, mosaic_type, 'images')
-            psf_to_use_arcsec = psf_to_use*3600.0   # Since BMAJ is (or should be) in units of deg 
 
-            ### To simplify things for the moment, have the 'uniform' setting being to convolve with cicularised beam
-            beampars = tuple([psf_to_use, psf_to_use, 0.0])  ### CHECK I'VE SET THIS UP RIGHT
-            
             if args.psf_pars is None:
+                
                 log.info("WARNING: If wishing to override the default psf determined for the 'uniform' setting, "
                          "the user must specify the psf parameters to be used for convolution via 'psf-pars'.")
                 log.info("Proceeding with the largest psf found amongst (all channels of) all input images.")
-            else:
-                beampars = tuple(args.psf_pars)
-                log.info("Proceeding with the psf parameters specified via 'psf-pars'.")
+                psf_to_use = make_mosaic.find_largest_BMAJ(input_dir, images, mosaic_type, 'images')
+                psf_to_use_arcsec = psf_to_use*3600.0   # Since BMAJ is (or should be) in units of deg
 
-            psf_to_use_arcsec = beampars[0]  # User is asked to pass this value in units of arcsec
+                ### To simplify things for the moment, have the 'uniform' setting being to convolve with cicularised beam
+                beampars = tuple([psf_to_use, psf_to_use, 0.0])  ### CHECK I'VE SET THIS UP RIGHT
+
+            else:
+
+                log.info("Proceeding with the psf parameters specified via 'psf-pars'.")
+                beampars = tuple(args.psf_pars)
+
+            psf_to_use_arcsec = beampars[0]  # User is asked to pass this value in units of arcsec  ### CHECK THAT I GET A SINGLE VALUE
             psf_to_use = psf_to_use_arcsec/3600.0  # Need to pass this to convolve_image in units of deg
 
             log.info(
