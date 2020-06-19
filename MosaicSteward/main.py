@@ -133,6 +133,10 @@ def main(argv):
             log.info("The 'psf-mode' parameter has been set to 'auto'.")
             ### COME BACK TO THIS LATER ONCE 'UNIFORM' IS WORKING
 
+            if args.psf_pars is not None:
+                log.info("WARNING: The values set via 'psf-pars' are being ignored. They are only used "
+                         "if 'psf-mode' has been set to 'uniform'.")
+
         elif psf_mode = 'uniform':    
 
             log.info("The 'psf-mode' parameter has been set to 'uniform'.")
@@ -162,6 +166,10 @@ def main(argv):
             log.info("The 'psf-mode' parameter has been set to 'scaled'.")
             ### CODE UP THIS OPTION LAST
         
+            if args.psf_pars is not None:
+                log.info("WARNING: The values set via 'psf-pars' are being ignored. They are only used "
+                         "if 'psf-mode' has been set to 'uniform'.")
+
         else:
 
             log.error("{0:s} is not a valid option for psf-mode".format(psf_mode))
