@@ -120,6 +120,58 @@ def Gaussian2D(xin, yin, GaussPar=(1., 1., 0.)):
                                 dtype=np.float64)
 
 
+# ---------------------------- A new function for uniform-resolution mode ------------------------------- #
+
+def find_largest_BMAJ(input_dir, images, mosaic_type, data_type): 
+
+    # data_type is to allow this to be run over 'images' and 'regridded-images' and still give useful log messages
+
+    # To save going through the headers of the images again, keep a record of the beam keywords
+    # Will need to be 2D arrays, where the second axis is given by the number of images used as input
+
+    n_images = len(images)
+
+    if mosaic_type == 'continuum':
+
+        log.info('Checking the synthesised-beam information for continuum {0:s}'.format(data_type))
+        BMAJ_array = np.empty([n_images, 1]) # Looks strange but to be in parallel with arrays for spectral mode
+        BMIN_array = np.empty([n_images, 1])
+        BPA_array = np.empty([n_images, 1])
+
+        index_image = 0
+        for ii in images:
+            
+            f = fits.open(input_dir+'/'+ii)
+            head = f[0].header
+            BMAJ_array[index_image][0] = float(head['BMAJ'])
+            BMIN_array[index_image][0] = float(head['BMIN'])
+            BPA_array[index_image][0] = float(head['BPA'])
+            index_image += 1
+
+        #print('BMAJ_array = ', BMAJ_array)  ### FOR CHECKING 
+        #print('BMIN_array = ', BMIN_array)
+        #print('BPA_array = ', BPA_array)
+
+    else:
+
+        log.info('Checking the synthesised-beam information for spectral {0:s}'.data_type)
+
+        f = fits.open(input_dir+'/'+images[0])  # i.e. open the first input image
+        head = f[0].header
+        n_channels = int(head['NAXIS'])
+        log.info('Based on the first input, we expect each of the input {0:s} to have {1:i} channels'.format(data_type,n_channels))
+
+        BMAJ_array = np.empty([n_images, n_channels]) 
+        BMIN_array = np.empty([n_images, n_channels])
+        BPA_array = np.empty([n_images, n_channels])
+
+        index_image = 0
+        for ii in images:
+            
+            f = fits.open(input_dir+'/'+ii)
+            head = f[0].header
+
+
 
 # -------------------- Turning main.py from the original script into a function ------------------------ #
 
