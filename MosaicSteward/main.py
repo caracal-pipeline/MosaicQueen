@@ -129,6 +129,11 @@ def main(argv):
     if args.convolve_images:
 
         log.info("Images are to be convolved before mosaicking them together.")
+
+        if psf_mode is None: # i.e. user has enabled convolution but not considered the related settings
+
+            psf_mode = 'auto'
+            log.info("'psf-mode' was not specified, so proceeding with the default for this parameter: 'auto'.") 
      
         if psf_mode == 'auto':
 
@@ -192,7 +197,7 @@ def main(argv):
 
 
 
-        log.info("Psf paramters to be used: emaj = {0:.3f}, emin = {0:.3f}, PA = {0:.3f}".format(beampars[0], beampars[1], beampars[2])) ### CHECK FORMATTING
+        log.info("Psf paramters to be used: bmaj = {0:.3f}, bmin = {0:.3f}, bpa = {0:.3f}".format(beampars[0], beampars[1], beampars[2])) ### CHECK FORMATTING
 
         for image in images:
             image_convolver.convolve_image(input_dir, image, beampars, args.ncpu)
