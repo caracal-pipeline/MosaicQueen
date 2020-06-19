@@ -83,6 +83,8 @@ def main(argv):
     outname = args.name
     output_dir = args.output
 
+    log.info("COMMAND LINE INPUT: MosaicSteward {0:s}".format(" ".join(argv)))
+
     if args.target_images: 
         log.info('Target images = {}'.format(" ".join(args.target_images)))
         images = args.target_images
