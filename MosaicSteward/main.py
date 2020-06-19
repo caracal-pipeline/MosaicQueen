@@ -128,7 +128,7 @@ def main(argv):
 
         log.info("Images are to be convolved before mosaicking them together.")
      
-        if psf_mode = 'auto':
+        if psf_mode == 'auto':
 
             log.info("The 'psf-mode' parameter has been set to 'auto'.")
             ### COME BACK TO THIS LATER ONCE 'UNIFORM' IS WORKING
@@ -137,7 +137,7 @@ def main(argv):
                 log.info("WARNING: The values set via 'psf-pars' are being ignored. They are only used "
                          "if 'psf-mode' has been set to 'uniform'.")
 
-        elif psf_mode = 'uniform':    
+        elif psf_mode == 'uniform':    
 
             log.info("The 'psf-mode' parameter has been set to 'uniform'.")
 
@@ -157,6 +157,10 @@ def main(argv):
                 log.info("Proceeding with the psf parameters specified via 'psf-pars'.")
                 beampars = tuple(args.psf_pars)
 
+            print("Checking beampars")
+            print(beampars)
+            print(beampars[0])
+
             psf_to_use_arcsec = beampars[0]  # User is asked to pass this value in units of arcsec  ### CHECK THAT I GET A SINGLE VALUE
             psf_to_use = psf_to_use_arcsec/3600.0  # Need to pass this to convolve_image in units of deg
 
@@ -164,7 +168,7 @@ def main(argv):
                     "The input images will be convolved so that they have a uniform resolution of "
                     "{0:f} arcsec (for each freq channel, if the images are cubes)".format(psf_to_use_arcsec))
 
-        elif psf_mode = 'scaled':
+        elif psf_mode == 'scaled':
 
             log.info("The 'psf-mode' parameter has been set to 'scaled'.")
             ### CODE UP THIS OPTION LAST
