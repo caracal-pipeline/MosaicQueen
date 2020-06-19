@@ -7,6 +7,7 @@
 # This script is based on a convolving script by Landman Bester (landman.bester@gmail.com)
 # ------------------------------------------------------------------------------------------------------
 
+import MosaicSteward
 import numpy as np
 from astropy.io import fits
 from ducc0.fft import r2c, c2r  ### replaced pypocketfft with ducc.fft
