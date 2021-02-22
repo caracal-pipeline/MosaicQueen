@@ -140,19 +140,22 @@ def update_norm(norm, slc, regrid_hdu, cutoff):
 
     tmp = np.nan_to_num(regrid_hdu[0].data)
     mask = np.nan_to_num(regrid_hdu[0].data>cutoff)
-    tmp = tmp*mask
-    norm[slc] += tmp*tmp
-    norm[norm==0] = np.nan
+    tmp = tmp*tmp
+    norm[slc] += tmp*mask
 
 
-def update_mos(mos, slc, regrid_hdu, cutoff):
+def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff):
     """
         update mosaic array
     """
 
-    tmp = np.nan_to_num(regrid_hdu[0].data)
-    mask = tmp > cutoff
-    mos[slc] = tmp * mask
+    image_tmp = np.nan_to_num(image_regrid_hdu[0].data)
+    beam_tmp = np.nan_to_num(beam_regrid_hdu[0].data)
+    mask = beam_tmp > cutoff
+    mos[slc] +=  (image_tmp * beam_tmp) * mask
+    print(np.sum(mos))
+    
+    
 
 def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname, imagesR, beamsR, cutoff, images):
 
@@ -185,9 +188,8 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname, ima
 
         elif mosaic_type == 'continuum':
             slc = slice(y1,y2), slice(x1,x2)
-
         update_norm(norm_array, slc, beam_regrid_hdu, cutoff)
-        update_mos(mos_array, slc, image_regrid_hdu, cutoff)
+        update_mos(mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff)
         image_regrid_hdu.close()
         beam_regrid_hdu.close()
 
@@ -197,7 +199,7 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname, ima
         with fits.open(input_dir+'/'+images[0]) as hdu:
             zhead = hdu[0].header
             moshead['ctype3'] = zhead['ctype3']
-    
+    norm_array[norm_array == 0] = np.nan 
     fits.writeto('{0:s}/{1:s}.fits'.format(output_dir,outname), mos_array /
                  norm_array, overwrite=True, header=moshead)
     fits.writeto('{0:s}/{1:s}_noise.fits'.format(output_dir,outname), 1. /
