@@ -181,10 +181,10 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname, ima
         x2 = int(float(moshead['CRPIX1']) - head['CRPIX1'] + head['NAXIS1'])
 
         if mosaic_type == 'spectral':
-            slc = slice(None), slice(y1,y2), slice(x1:,x2) 
+            slc = slice(None), slice(y1,y2), slice(x1,x2) 
 
         elif mosaic_type == 'continuum':
-            slc = slice(y1:y2), slice(x1,x2)
+            slc = slice(y1,y2), slice(x1,x2)
 
         update_norm(norm_array, slc, beam_regrid_hdu, cutoff)
         update_mos(mos_array, slc, image_regrid_hdu, cutoff)
