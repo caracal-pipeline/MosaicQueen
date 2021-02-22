@@ -27,8 +27,8 @@ def main(argv):
                         help="The directory that contains the (2D or 3D) images and beams.")
     parser.add_argument("-m", "--mosaic-type",
                         help="State 'continuum' or 'spectral' as the type of (image) mosaic to be made.")
-    parser.add_argument("-a", "--associated-mosaics",
-                        help="Set to 'True' if mosaics of the 'residuals' and 'weights' are also to be made.")
+    parser.add_argument("-a", "--associated-mosaics", action="store_true",
+                        help="Also make mosaics of the associated 'model' and 'residual' .fits files.")
     parser.add_argument("-r", "--regrid", action="store_true",
                         help="Use montage for regridding the images and beams.")
     parser.add_argument("-c", "--cutoff", type=float, default=0.1,
@@ -61,9 +61,14 @@ def main(argv):
         log.error('At least two images must be specified for mosaicking')
         raise ValueError('At least two images must be specified for mosaicking')
 
-    beams = [tt.replace('image.fits', 'pb.fits') for tt in images]
     imagesR = [tt.replace('image.fits', 'imageR.fits') for tt in images]
+    beams = [tt.replace('image.fits', 'pb.fits') for tt in images]
     beamsR = [tt.replace('image.fits', 'pbR.fits') for tt in images]
+    if args.associated_mosaics:
+        log.info('Will generate mosaics based on the input images, their associated models, and their residuals') # Add 'weights' later once I know where it's come from
+        
+    else:
+        log.info('Will generate a mosaic based on the input images. If you would also like mosaics to be made from the associated models and residuals, please re-run with the "associated_mosaics" parameter enabled.')
 
     for tt in images:
         try:
