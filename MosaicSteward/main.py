@@ -26,7 +26,9 @@ def main(argv):
     parser.add_argument("-i", "--input",
                         help="The directory that contains the (2D or 3D) images and beams.")
     parser.add_argument("-m", "--mosaic-type",
-                        help="State 'continuum' or 'spectral' as the type of mosaic to be made.")
+                        help="State 'continuum' or 'spectral' as the type of (image) mosaic to be made.")
+    parser.add_argument("-a", "--associated-mosaics",
+                        help="Set to 'True' if mosaics of the 'residuals' and 'weights' are also to be made.")
     parser.add_argument("-r", "--regrid", action="store_true",
                         help="Use montage for regridding the images and beams.")
     parser.add_argument("-c", "--cutoff", type=float, default=0.1,
