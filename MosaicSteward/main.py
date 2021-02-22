@@ -10,6 +10,7 @@ from argparse import ArgumentParser
 import MosaicSteward
 import os
 import sys
+import glob
 
 log = MosaicSteward.log
 
@@ -25,7 +26,7 @@ def main(argv):
 
     parser.add_argument("-i", "--input",
                         help="The directory that contains the (2D or 3D) images and beams.")
-    parser.add_argument("-m", "--mosaic-type",
+    parser.add_argument("-m", "--mosaic-type", choices= ["spectral", "continuum"], required = True,
                         help="State 'continuum' or 'spectral' as the type of mosaic to be made.")
     parser.add_argument("-d", "--domontage", action="store_true",
                         help="Use montage for regridding the images and beams.")
@@ -45,10 +46,15 @@ def main(argv):
     cutoff = args.cutoff
     outname = args.name
     output_dir = args.output
+    os.makedirs(output_dir, exist_ok=True)
 
     if args.target_images: 
+        if len(args.target_images) == 1:
+            images = glob.glob(os.path.join(args.input, args.target_images[0]))
+            images = [os.path.basename(item) for item in images]
+        else:
+            images = args.target_images
         log.info('Target images = {}'.format(" ".join(args.target_images)))
-        images = args.target_images
     else:
         log.error(
             "Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
@@ -63,19 +69,11 @@ def main(argv):
     imagesR = [tt.replace('image.fits', 'imageR.fits') for tt in images]
     beamsR = [tt.replace('image.fits', 'pbR.fits') for tt in images]
 
-    for tt in images:
-        try:
-            open(input_dir+'/'+tt)
-        except FileNotFoundError:
-            log.error('File {0:s} does not exist'.format(input_dir+'/'+tt))
-            raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+tt))
-
-    for bb in beams:
-        try:
-            open(input_dir+'/'+bb)
-        except FileNotFoundError:
-            log.error('File {0:s} does not exist'.format(input_dir+'/'+bb)) 
-            raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+bb))
+    for tt in images + beams:
+        fname = os.path.join(input_dir,tt)
+        if not os.path.exists(fname):
+            log.error('File {0:s} does not exist'.format(fname))
+            raise FileNotFoundError('File {0:s} does not exist'.format(fname))
 
     log.info('All images and beams found on disc')
 

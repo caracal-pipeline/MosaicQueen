@@ -82,7 +82,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, images, beams
     if mosaic_type == 'spectral':
         montage_projection = 'mProjectCube'
         montage_add = 'mAddCube'
-    if mosaic_type == 'continuum':
+    elif mosaic_type == 'continuum':
         montage_projection = 'mProject'
         montage_add = 'mAdd'
 
@@ -173,7 +173,7 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname, ima
     for ii, bb in zip(imagesR, beamsR):
         log.info('Adding {0:s} to the mosaic ...'.format(ii))
         image_regrid_hdu = fits.open(output_dir+'/'+ii)  # i.e. open a specific re-gridded image
-        head = f[0].header
+        head = image_regrid_hdu[0].header
         beam_regrid_hdu = fits.open(output_dir+'/'+bb)  # i.e. open a specific re-gridded beam
         y1 = int(float(moshead['CRPIX2']) - head['CRPIX2'])
         y2 = int(float(moshead['CRPIX2']) - head['CRPIX2'] + head['NAXIS2'])
