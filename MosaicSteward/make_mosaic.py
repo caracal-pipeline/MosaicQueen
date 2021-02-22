@@ -153,8 +153,6 @@ def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff):
     beam_tmp = np.nan_to_num(beam_regrid_hdu[0].data)
     mask = beam_tmp > cutoff
     mos[slc] +=  (image_tmp * beam_tmp) * mask
-    print(np.sum(mos))
-    
     
 
 def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname, imagesR, beamsR, cutoff, images):
