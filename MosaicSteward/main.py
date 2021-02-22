@@ -27,7 +27,7 @@ def main(argv):
                         help="The directory that contains the (2D or 3D) images and beams.")
     parser.add_argument("-m", "--mosaic-type",
                         help="State 'continuum' or 'spectral' as the type of mosaic to be made.")
-    parser.add_argument("-d", "--domontage", action="store_true",
+    parser.add_argument("-r", "--regrid", action="store_true",
                         help="Use montage for regridding the images and beams.")
     parser.add_argument("-c", "--cutoff", type=float, default=0.1,
                          help="The cutoff in the primary beam to use (assuming a Gaussian at the moment)."
@@ -80,7 +80,7 @@ def main(argv):
     log.info('All images and beams found on disc')
 
 
-    if args.domontage:
+    if args.regrid:
         make_mosaic.use_montage_for_regridding(
             input_dir, output_dir, mosaic_type, images, beams, imagesR, beamsR, outname)
     else:
