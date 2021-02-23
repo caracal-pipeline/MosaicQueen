@@ -19,6 +19,16 @@ try:
 except NameError:
     FileNotFoundError = IOError
 
+def check_for_files(input_dir, images):
+
+    for tt in images:
+        try:
+            open(input_dir+'/'+tt)
+        except FileNotFoundError:
+            log.error('File {0:s} does not exist'.format(input_dir+'/'+tt))
+            raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+tt))
+
+
 def main(argv):
 
     parser = ArgumentParser(description="Run make_mosaic over the targets")
@@ -89,6 +99,11 @@ def main(argv):
             raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+bb))
 
     log.info('All images and beams found on disc')
+
+    if args.associated_mosaics:
+
+
+        log.info('All models and residuals found on disc')
 
 
     if args.regrid:
