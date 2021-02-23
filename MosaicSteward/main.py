@@ -61,14 +61,18 @@ def main(argv):
         log.error('At least two images must be specified for mosaicking')
         raise ValueError('At least two images must be specified for mosaicking')
 
+    # 'R' to signify the regridded versions of the different .fits files
     imagesR = [tt.replace('image.fits', 'imageR.fits') for tt in images]
     beams = [tt.replace('image.fits', 'pb.fits') for tt in images]
     beamsR = [tt.replace('image.fits', 'pbR.fits') for tt in images]
     if args.associated_mosaics:
-        log.info('Will generate mosaics based on the input images, their associated models, and their residuals') # Add 'weights' later once I know where it's come from
-        
+        log.info('Will generate mosaics made from the input images, their associated models, and their residuals')
+        models = [tt.replace('image.fits', 'model.fits') for tt in images]
+        modelsR = [tt.replace('image.fits', 'modelR.fits') for tt in images]
+        residuals = [tt.replace('image.fits', 'residual.fits') for tt in images]
+        residualsR = [tt.replace('image.fits', 'residualR.fits') for tt in images]
     else:
-        log.info('Will generate a mosaic based on the input images. If you would also like mosaics to be made from the associated models and residuals, please re-run with the "associated_mosaics" parameter enabled.')
+        log.info('Will generate a mosaic from the input images. If you would also like mosaics to be made from the associated models and residuals, please re-run with the "associated_mosaics" parameter enabled.')
 
     for tt in images:
         try:
