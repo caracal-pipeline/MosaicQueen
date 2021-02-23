@@ -86,7 +86,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, images, beams
         montage_projection = 'mProject'
         montage_add = 'mAdd'
 
-    log.info('Running montage tasks to regrid the input images ...')
+    log.info('Running montage tasks to regrid files ...')
     # Reproject the input images
     for cc in images:
         Run(montage_projection + ' {0:s}/{1:s} {2:s}/{3:s} {2:s}/{4:s}.hdr'.format(
@@ -97,7 +97,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, images, beams
     # Co-add the reprojected images
     #Run(montage_add + ' -p . {0:s}_fields_regrid.tbl {0:s}.hdr {0:s}.fits'.format(outname))
     
-    log.info('Running montage tasks to regrid the input beams ...')
+    log.info('Running montage tasks to regrid input files ...')
     # Reproject the input beams
     for bb in beams:
         Run(montage_projection + ' {0:s}/{1:s} {2:s}/{3:s} {2:s}/{4:s}.hdr'.format(
@@ -128,7 +128,7 @@ def check_for_regridded_files(output_dir, imagesR, beamsR):
             log.error('File {0:s} does not exist'.format(output_dir+'/'+bb))
             raise FileNotFoundError('File {0:s} does not exist'.format(output_dir+'/'+bb))
 
-    log.info('All regridded images and beams found on disc')
+    log.info('All regridded files found on disc')
 
     return 0
 
