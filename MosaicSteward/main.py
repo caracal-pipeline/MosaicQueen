@@ -84,19 +84,21 @@ def main(argv):
     else:
         log.info('Will generate a mosaic from the input images. If you would also like mosaics to be made from the associated models and residuals, please re-run with the "associated_mosaics" parameter enabled.')
 
-    for tt in images:
-        try:
-            open(input_dir+'/'+tt)
-        except FileNotFoundError:
-            log.error('File {0:s} does not exist'.format(input_dir+'/'+tt))
-            raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+tt))
+    check_for_files(input_dir, images)
+    #for tt in images:
+    #    try:
+    #        open(input_dir+'/'+tt)
+    #    except FileNotFoundError:
+    #        log.error('File {0:s} does not exist'.format(input_dir+'/'+tt))
+    #        raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+tt))
 
-    for bb in beams:
-        try:
-            open(input_dir+'/'+bb)
-        except FileNotFoundError:
-            log.error('File {0:s} does not exist'.format(input_dir+'/'+bb)) 
-            raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+bb))
+    check_for_files(input_dir, beams)
+    #for bb in beams:
+    #    try:
+    #        open(input_dir+'/'+bb)
+    #    except FileNotFoundError:
+    #        log.error('File {0:s} does not exist'.format(input_dir+'/'+bb)) 
+    #        raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+bb))
 
     log.info('All images and beams found on disc')
 
