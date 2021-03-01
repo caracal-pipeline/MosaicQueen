@@ -40,16 +40,17 @@ def main(argv):
     parser.add_argument("-a", "--associated-mosaics", action="store_true",
                         help="Also make mosaics of the associated 'model' and 'residual' .fits files.")
     parser.add_argument("-r", "--regrid", action="store_true",
-                        help="Use montage for regridding the images and beams.")
+                        help="Use montage for regridding the images and beams."
+                              "Also the 'model' and 'residual' files, if '--associated-mosaics' has been enabled.")
     parser.add_argument("-c", "--cutoff", type=float, default=0.1,
-                         help="The cutoff in the primary beam to use (assuming a Gaussian at the moment)."
+                        help="The cutoff in the primary beam to use (assuming a Gaussian at the moment)."
                               "E.g. The default of 0.1 means going down to the 10 percent level for each pointing.")
     parser.add_argument("-n", "--name", default="mymosaic",
                         help="The prefix to be used for output files.")
     parser.add_argument("-t", "--target-images", action="append",
-                         help="The filenames of each target/pointing image to be mosaicked. A suffix of 'image.fits' is expected, and this is replaced by 'pb.fits' in order to locate the corresponding beams (which are also required as input).")
+                        help="The filenames of each target/pointing image to be mosaicked. A suffix of 'image.fits' is expected, and this is replaced by 'pb.fits' in order to locate the corresponding beams (which are also required as input).")
     parser.add_argument("-o", "--output",
-                         help="The directory for all output files.")
+                        help="The directory for all output files.")
 
     args = parser.parse_args(argv)
     input_dir = args.input
