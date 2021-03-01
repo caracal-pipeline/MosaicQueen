@@ -70,7 +70,7 @@ def make_mosaic_header(mosaic_type, t_head):
 # ---------------------------- New/re-structured functions --------------------------------- #
 
 def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname):
-                               # image_type should be 'image', 'model', or 'residual'
+                               # image_type should be 'image', 'pb', 'model', or 'residual'
 
     log.info('Running montage tasks to create mosaic header ...')
     # Create an image list
@@ -100,17 +100,17 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
     # Co-add the reprojected images
     #Run(montage_add + ' -p . {0:s}_{1:s}_fields_regrid.tbl {0:s}_{1:s}.hdr {0:s}.fits'.format(outname,image_type))
     
-    if image_type == 'image':  # The original situation, as an 'if' statement so that only one _beams_regrid file is generated
-        log.info('Running montage tasks to regrid beams...')
-        # Reproject the input beams
-        for bb in beams:
-            Run(montage_projection + ' {0:s}/{1:s} {2:s}/{3:s} {2:s}/{4:s}.hdr'.format(
-                input_dir, bb, output_dir, bb.replace('pb.fits', 'pbR.fits'), outname))
-        # Create a reprojected-beams metadata file
-        create_montage_list(beamsR, '{0:s}/{1:s}_beams_regrid'.format(output_dir,outname))
-        Run('mImgtbl -t {0:s}/{1:s}_beams_regrid {0:s} {0:s}/{1:s}_beams_regrid.tbl'.format(output_dir,outname))
-        # Co-add the reprojected beams
-        #Run(montage_add + ' -p . {0:s}_beams_regrid.tbl {0:s}.hdr {0:s}pb.fits'.format(outname))
+    # if image_type == 'image':  # The original situation, as an 'if' statement so that only one _beams_regrid file is generated
+    #     log.info('Running montage tasks to regrid beams...')
+    #     # Reproject the input beams
+    #     for bb in beams:
+    #         Run(montage_projection + ' {0:s}/{1:s} {2:s}/{3:s} {2:s}/{4:s}.hdr'.format(
+    #             input_dir, bb, output_dir, bb.replace('pb.fits', 'pbR.fits'), outname))
+    #     # Create a reprojected-beams metadata file
+    #     create_montage_list(beamsR, '{0:s}/{1:s}_beams_regrid'.format(output_dir,outname))
+    #     Run('mImgtbl -t {0:s}/{1:s}_beams_regrid {0:s} {0:s}/{1:s}_beams_regrid.tbl'.format(output_dir,outname))
+    #     # Co-add the reprojected beams
+    #     #Run(montage_add + ' -p . {0:s}_beams_regrid.tbl {0:s}.hdr {0:s}_pb.fits'.format(outname))
 
     return 0
 
