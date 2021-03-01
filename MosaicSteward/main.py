@@ -41,7 +41,11 @@ def main(argv):
                         help="Also make mosaics of the associated 'model' and 'residual' .fits files.")
     parser.add_argument("-r", "--regrid", action="store_true",
                         help="Use montage for regridding the images and beams."
-                              "Also the 'model' and 'residual' files, if '--associated-mosaics' has been enabled.")
+                              "Also regrid the 'model' and 'residual' files, if '--associated-mosaics' is enabled.")
+    parser.add_argument("-f", "--force-regrid", action="store_true",
+                        help="If the user wants newly-regridded files, this '--force-regrid' argument should be enabled."
+                              "If '--regrid' is enabled instead, the package will first check whether regridded files already exist." 
+                              "(If they are found, regridding will not proceed because this is a time-consuming step.")
     parser.add_argument("-c", "--cutoff", type=float, default=0.1,
                         help="The cutoff in the primary beam to use (assuming a Gaussian at the moment)."
                               "E.g. The default of 0.1 means going down to the 10 percent level for each pointing.")
