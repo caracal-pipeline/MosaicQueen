@@ -44,8 +44,8 @@ def main(argv):
                               "Also regrid the 'model' and 'residual' files, if '--associated-mosaics' is enabled.")
     parser.add_argument("-f", "--force-regrid", action="store_true",
                         help="If the user wants newly-regridded files, this '--force-regrid' argument should be enabled."
-                              "If '--regrid' is enabled instead, the package will first check whether regridded files already exist." 
-                              "(If they are found, regridding will not proceed because this is a time-consuming step.")
+                              "(If '--regrid' is enabled instead, the package will first check whether regridded files already exist." 
+                              "If they are found, regridding will not proceed because this is a time-consuming step.)")
     parser.add_argument("-c", "--cutoff", type=float, default=0.1,
                         help="The cutoff in the primary beam to use (assuming a Gaussian at the moment)."
                               "E.g. The default of 0.1 means going down to the 10 percent level for each pointing.")
@@ -105,14 +105,20 @@ def main(argv):
     #        raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+bb))
     log.info('All images and beams found on disc')
 
-    if args.regrid:
+    if args.force_regrid:
         make_mosaic.use_montage_for_regridding(
             input_dir, output_dir, mosaic_type, images, beams, imagesR, beamsR, outname)
+    if args.regrid:
+        log.info('Checking whether regridded images and beams already exist')
+        make_mosaic.check_for_regridded_files(output_dir, imagesR, beamsR)
+        # if they don't exist, only then
+            make_mosaic.use_montage_for_regridding(
+                input_dir, output_dir, mosaic_type, images, beams, imagesR, beamsR, outname)
     else:
         log.info(
             'Will use mosaic header {0:s}.hdr and regridded images and beams available on disc'.format(outname))
 
-    make_mosaic.check_for_regridded_files(output_dir, imagesR, beamsR)
+    make_mosaic.check_for_regridded_files(output_dir, imagesR, beamsR)  # This function raises an error and exits if files are not found 
 
     make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'image', outname, imagesR, beamsR, cutoff, images)
 
