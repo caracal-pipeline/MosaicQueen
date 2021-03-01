@@ -109,7 +109,7 @@ def main(argv):
 
     make_mosaic.check_for_regridded_files(output_dir, imagesR, beamsR)
 
-    make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname, imagesR, beamsR, cutoff, images)
+    make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'image', outname, imagesR, beamsR, cutoff, images)
 
     if args.associated_mosaics:
 
@@ -125,9 +125,9 @@ def main(argv):
                 'Will use regridded models and residuals available on disc'.format(outname))
 
         make_mosaic.check_for_regridded_files(output_dir, modelsR, residualsR)
-        
-        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname+'_model', modelsR, beamsR, cutoff, models)
-        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname+'_residual', residualsR, beamsR, cutoff, residuals)
+
+        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'model', outname+'_model', modelsR, beamsR, cutoff, models)
+        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'residual', outname+'_residual', residualsR, beamsR, cutoff, residuals)
 
     # Move the log file to the output directory
     os.system('mv log-make_mosaic.txt '+output_dir+'/')
