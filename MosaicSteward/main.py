@@ -90,23 +90,11 @@ def main(argv):
     else:
         log.info('Will generate a mosaic from the input images. If you would also like mosaics to be made from the associated models and residuals, please re-run with the "associated_mosaics" parameter enabled.')
 
-    check_for_files(input_dir, images)
-    #for tt in images:
-    #    try:
-    #        open(input_dir+'/'+tt)
-    #    except FileNotFoundError:
-    #        log.error('File {0:s} does not exist'.format(input_dir+'/'+tt))
-    #        raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+tt))
-    check_for_files(input_dir, beams)
-    #for bb in beams:
-    #    try:
-    #        open(input_dir+'/'+bb)
-    #    except FileNotFoundError:
-    #        log.error('File {0:s} does not exist'.format(input_dir+'/'+bb)) 
-    #        raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+bb))
-    log.info('All images and beams found on disc')
+    log.info('Checking for images and beams')
+    make_mosaic.final_check_for_files(input_dir, images, beams)  # This function raises an error and exits if files are not found
 
     if args.force_regrid:
+        log.info('User wants all regridded files to be created by this run, even if they are already on disk') 
         make_mosaic.use_montage_for_regridding(
             input_dir, output_dir, mosaic_type, images, beams, imagesR, beamsR, outname)
     if args.regrid:
@@ -114,13 +102,14 @@ def main(argv):
         check_for_files(output_dir, imagesR)
         check_for_files(output_dir, beamsR)
         if exists == False:
+            log.info('They are not all in place, so using montage to create them')
             make_mosaic.use_montage_for_regridding(
                 input_dir, output_dir, mosaic_type, images, beams, imagesR, beamsR, outname)
     else:
         log.info(
-            'Will use mosaic header {0:s}.hdr and regridded images and beams available on disc'.format(outname))
+            'Will use mosaic header {0:s}.hdr and regridded images and beams available on disk'.format(outname))
 
-    make_mosaic.final_check_for_regridded_files(output_dir, imagesR, beamsR)  # This function raises an error and exits if files are not found 
+    make_mosaic.final_check_for_files(output_dir, imagesR, beamsR)  # This function raises an error and exits if files are not found 
 
     make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'image', outname, imagesR, beamsR, cutoff, images)
 
@@ -128,7 +117,7 @@ def main(argv):
 
         check_for_files(input_dir, models)
         check_for_files(input_dir, residuals)
-        log.info('All models and residuals found on disc')
+        log.info('All models and residuals found on disk')
 
         if args.regrid:
             make_mosaic.use_montage_for_regridding(
