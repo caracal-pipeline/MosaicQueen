@@ -21,12 +21,13 @@ except NameError:
 
 def check_for_files(input_dir, images):
 
+    exists = True 
     for tt in images:
         try:
             open(input_dir+'/'+tt)
         except FileNotFoundError:
             log.error('File {0:s} does not exist'.format(input_dir+'/'+tt))
-            raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+tt))
+            exists = False 
 
 
 def main(argv):
@@ -110,8 +111,9 @@ def main(argv):
             input_dir, output_dir, mosaic_type, images, beams, imagesR, beamsR, outname)
     if args.regrid:
         log.info('Checking whether regridded images and beams already exist')
-        make_mosaic.check_for_regridded_files(output_dir, imagesR, beamsR)
-        # if they don't exist, only then
+        check_for_files(output_dir, imagesR)
+        check_for_files(output_dir, beamsR)
+        if exists == False:
             make_mosaic.use_montage_for_regridding(
                 input_dir, output_dir, mosaic_type, images, beams, imagesR, beamsR, outname)
     else:
