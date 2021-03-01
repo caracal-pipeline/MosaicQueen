@@ -69,7 +69,9 @@ def make_mosaic_header(mosaic_type, t_head):
 
 # ---------------------------- New/re-structured functions --------------------------------- #
 
-def use_montage_for_regridding(input_dir, output_dir, mosaic_type, images, beams, imagesR, beamsR, outname):
+def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, outname):
+                               # image_type should be 'image', 'pb', 'model', or 'residual'
+
     log.info('Running montage tasks to create mosaic header ...')
     # Create an image list
     create_montage_list(images, '{0:s}/{1:s}_fields'.format(output_dir,outname))
@@ -90,7 +92,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, images, beams
     # Reproject the input images
     for cc in images:
         Run(montage_projection + ' {0:s}/{1:s} {2:s}/{3:s} {2:s}/{4:s}.hdr'.format(
-            input_dir, cc, output_dir, cc.replace('image.fits', 'imageR.fits'), outname))
+            input_dir, cc, output_dir, cc.replace(image_type+'.fits', image_type+'R.fits'), outname))
     # Create a reprojected-image metadata file
     create_montage_list(imagesR, '{0:s}/{1:s}_fields_regrid'.format(output_dir,outname))
     Run('mImgtbl -d -t {0:s}/{1:s}_fields_regrid {0:s} {0:s}/{1:s}_fields_regrid.tbl'.format(output_dir,outname)) # '-d' flag added to aid de-bugging
