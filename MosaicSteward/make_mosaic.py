@@ -111,7 +111,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, images, beams
     return 0
 
 
-def check_for_regridded_files(output_dir, imagesR, beamsR):
+def final_check_for_regridded_files(output_dir, imagesR, beamsR):
     # As the regridded files were produced by montage_mosaic, we expect them to be in the output directory
 
     for cc in imagesR:
