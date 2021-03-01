@@ -21,13 +21,15 @@ except NameError:
 
 def check_for_files(input_dir, images):
 
-    exists = True 
+    exist = True 
     for tt in images:
         try:
             open(input_dir+'/'+tt)
         except FileNotFoundError:
             log.error('File {0:s} does not exist'.format(input_dir+'/'+tt))
-            exists = False 
+            exist = False 
+
+    return exist
 
 
 def main(argv):
@@ -88,20 +90,22 @@ def main(argv):
         residuals = [tt.replace('image.fits', 'residual.fits') for tt in images]
         residualsR = [tt.replace('image.fits', 'residualR.fits') for tt in images]
     else:
-        log.info('Will generate a mosaic from the input images. If you would also like mosaics to be made from the associated models and residuals, please re-run with the "associated_mosaics" parameter enabled.')
+        log.info('Will generate a mosaic from the input images. If you would also like mosaics to be made from the associated models and residuals, please re-run with the "--associated_mosaics" argument enabled.')
 
     log.info('Checking for images and beams')
     make_mosaic.final_check_for_files(input_dir, images, beams)  # This function raises an error and exits if files are not found
 
     if args.force_regrid:
-        log.info('User wants all regridded files to be created by this run, even if they are already on disk') 
+        log.info('You have asked for all regridded files to be created by this run, even if they are already on disk') 
         make_mosaic.use_montage_for_regridding(
             input_dir, output_dir, mosaic_type, images, beams, imagesR, beamsR, outname)
     if args.regrid:
-        log.info('Checking whether regridded images and beams already exist')
-        check_for_files(output_dir, imagesR)
-        check_for_files(output_dir, beamsR)
-        if exists == False:
+        log.info('Checking for regridded images and beams')
+        imagesR_exist = check_for_files(output_dir, imagesR)
+        beamsR_exist = check_for_files(output_dir, beamsR)
+        if imagesR_exist or beamsR_exist:
+
+        else:
             log.info('They are not all in place, so using montage to create them')
             make_mosaic.use_montage_for_regridding(
                 input_dir, output_dir, mosaic_type, images, beams, imagesR, beamsR, outname)
