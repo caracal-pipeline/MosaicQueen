@@ -98,23 +98,27 @@ def main(argv):
     if args.force_regrid:
         log.info('You have asked for all regridded files to be created by this run, even if they are already on disk') 
         make_mosaic.use_montage_for_regridding(
-            input_dir, output_dir, mosaic_type, 'image', images, beams, imagesR, beamsR, outname)
+            input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname)
+        make_mosaic.use_montage_for_regridding(
+            input_dir, output_dir, mosaic_type, 'pb', images, imagesR, beams, beamsR, outname)
     if args.regrid:
         log.info('Checking for regridded images and beams')
         imagesR_dont_exist = check_for_files(output_dir, imagesR)
         if imagesR_dont_exist:
             log.info('Regridded images are not all in place, so using montage to create them')
             make_mosaic.use_montage_for_regridding(
-                input_dir, output_dir, mosaic_type, 'image', images, beams, imagesR, beamsR, outname)
+                input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname)
         beamsR_dont_exist = check_for_files(output_dir, beamsR)
         if beamsR_dont_exist:  
             log.info('Regridded beams are not all in place, so using montage to create them')
             make_mosaic.use_montage_for_regridding(
-                input_dir, output_dir, mosaic_type, 'pb', images, beams, imagesR, beamsR, outname)
+                input_dir, output_dir, mosaic_type, 'pb', images, imagesR, beams, beamsR, outname)
     else:
         log.info(
             'Will use mosaic header {0:s}.hdr and regridded images and beams available on disk'.format(outname))
 
+    exit() ### CHECK REGRIDDING IS STILL WORKING BEFORE PROCEEDING 
+    
     make_mosaic.final_check_for_files(output_dir, imagesR, beamsR)  # This function raises an error and exits if files are not found 
 
     make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'image', outname, imagesR, beamsR, cutoff, images)
