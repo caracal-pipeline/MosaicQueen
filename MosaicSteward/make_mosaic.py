@@ -133,7 +133,7 @@ def check_for_regridded_files(output_dir, imagesR, beamsR):
     return 0
 
 
-def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname, imagesR, beamsR, cutoff, images):
+def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, images):
 
     log.info('Mosaicking ...')
     moshead = [jj.strip().replace(' ', '').split('=')
@@ -151,7 +151,7 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname, ima
         norm_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
     for ii, bb in zip(imagesR, beamsR):
         log.info('Adding {0:s} to the mosaic ...'.format(ii))
-        f = fits.open(output_dir+'/'+ii)  # i.e. open a specific re-gridded image
+        f = fits.open(output_dir+'/'+ii)  # i.e. open a specific re-gridded image/model/residual
         head = f[0].header
         g = fits.open(output_dir+'/'+bb)  # i.e. open a specific re-gridded beam
         y1 = int(float(moshead['CRPIX2']) - head['CRPIX2'])
@@ -183,12 +183,16 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname, ima
         moshead['ctype3'] = zhead['ctype3']
     fits.writeto('{0:s}/{1:s}.fits'.format(output_dir,outname), mos_array /
                  norm_array, overwrite=True, header=moshead)
-    fits.writeto('{0:s}/{1:s}_noise.fits'.format(output_dir,outname), 1. /
-                 np.sqrt(norm_array), overwrite=True, header=moshead)
-    fits.writeto('{0:s}/{1:s}_weights.fits'.format(output_dir,outname),
-                 np.sqrt(norm_array), overwrite=True, header=moshead)
 
-    log.info('The following mosaic FITS were written to disc: {0:s}.fits {0:s}_noise.fits {0:s}_weights.fits'.format(outname))
+    if image_type == 'image':  # Only want one copy of the _noise and _weights mosaics to be produced
+        fits.writeto('{0:s}/{1:s}_noise.fits'.format(output_dir,outname), 1. /
+                     np.sqrt(norm_array), overwrite=True, header=moshead)
+        fits.writeto('{0:s}/{1:s}_weights.fits'.format(output_dir,outname),
+                     np.sqrt(norm_array), overwrite=True, header=moshead)
+        log.info('The following mosaic FITS were written to disc: {0:s}.fits {0:s}_noise.fits {0:s}_weights.fits'.format(outname))
+    else:  # i.e. when making a mosaic of the 'model' or 'residual' .fits files
+        log.info('The following mosaic FITS was written to disc: {0:s}.fits'.format(outname))
+    
     log.info('Mosaicking completed')
 
     return 
