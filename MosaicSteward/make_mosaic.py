@@ -111,24 +111,24 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, images, beams
     return 0
 
 
-def final_check_for_regridded_files(output_dir, imagesR, beamsR):
+def final_check_for_files(directory, imagesR, beamsR):
     # As the regridded files were produced by montage_mosaic, we expect them to be in the output directory
 
     for cc in imagesR:
         try:
-            open(output_dir+'/'+cc)
+            open(directory+'/'+cc)
         except FileNotFoundError:
-            log.error('File {0:s} does not exist'.format(output_dir+'/'+cc))
-            raise FileNotFoundError('File {0:s} does not exist'.format(output_dir+'/'+cc))
+            log.error('File {0:s} does not exist'.format(directory+'/'+cc))
+            raise FileNotFoundError('File {0:s} does not exist'.format(directory+'/'+cc))
 
     for bb in beamsR:
         try:
-            open(output_dir+'/'+bb)
+            open(directory+'/'+bb)
         except FileNotFoundError:
-            log.error('File {0:s} does not exist'.format(output_dir+'/'+bb))
-            raise FileNotFoundError('File {0:s} does not exist'.format(output_dir+'/'+bb))
+            log.error('File {0:s} does not exist'.format(directory+'/'+bb))
+            raise FileNotFoundError('File {0:s} does not exist'.format(directory+'/'+bb))
 
-    log.info('All regridded files found on disc')
+    log.info('All files found on disk')
 
     return 0
 
