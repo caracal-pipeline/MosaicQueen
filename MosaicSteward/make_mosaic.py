@@ -139,10 +139,11 @@ def final_check_for_files(directory, imagesR, beamsR):
 
 
 def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, images):
+                                # image_type should be 'image', 'model', or 'residual'
 
     log.info('Mosaicking ...')
     moshead = [jj.strip().replace(' ', '').split('=')
-            for jj in open('{0:s}/{1:s}.hdr'.format(output_dir,outname)).readlines()]
+            for jj in open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type)).readlines()]
     if ['END'] in moshead:
         del(moshead[moshead.index(['END'])])
     moshead = {k: v for (k, v) in moshead}   # Creating a dictionary, where 'k' stands for 'keyword' and 'v' stands for 'value'
@@ -186,7 +187,7 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
         f = fits.open(input_dir+'/'+images[0]) 
         zhead = f[0].header
         moshead['ctype3'] = zhead['ctype3']
-    fits.writeto('{0:s}/{1:s}.fits'.format(output_dir,outname), mos_array /
+    fits.writeto('{0:s}/{1:s}_{2:s}.fits'.format(output_dir,outname,image_type), mos_array /
                  norm_array, overwrite=True, header=moshead)
 
     if image_type == 'image':  # Only want one copy of the _noise and _weights mosaics to be produced
@@ -194,9 +195,9 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
                      np.sqrt(norm_array), overwrite=True, header=moshead)
         fits.writeto('{0:s}/{1:s}_weights.fits'.format(output_dir,outname),
                      np.sqrt(norm_array), overwrite=True, header=moshead)
-        log.info('The following mosaic FITS were written to disc: {0:s}.fits {0:s}_noise.fits {0:s}_weights.fits'.format(outname))
+        log.info('The following mosaic FITS were written to disc: {0:s}_{1:s}.fits {0:s}_noise.fits {0:s}_weights.fits'.format(outname,image_type))
     else:  # i.e. when making a mosaic of the 'model' or 'residual' .fits files
-        log.info('The following mosaic FITS was written to disc: {0:s}.fits'.format(outname))
+        log.info('The following mosaic FITS was written to disc: {0:s}_{1:s}.fits'.format(outname,image_type))
     
     log.info('Mosaicking completed')
 
