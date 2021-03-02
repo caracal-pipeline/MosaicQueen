@@ -141,7 +141,7 @@ def final_check_for_files(directory, imagesR, beamsR):
 def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, images):
                                 # image_type should be 'image', 'model', or 'residual'
 
-    log.info("Mosaicking an '{0:s}' mosaic...".format(image_type))
+    log.info("Creating an '{0:s}' mosaic...".format(image_type))
     moshead = [jj.strip().replace(' ', '').split('=')
             for jj in open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type)).readlines()]
     if ['END'] in moshead:
