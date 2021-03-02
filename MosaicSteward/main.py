@@ -158,7 +158,7 @@ def main(argv):
             log.info(
                 'Will use regridded models and residuals available on disk'.format(outname))
 
-        make_mosaic.check_for_regridded_files(output_dir, modelsR, residualsR)
+        make_mosaic.final_check_for_files(output_dir, modelsR, residualsR)
 
         make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'model', outname, modelsR, beamsR, cutoff, models)
         make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'residual', outname, residualsR, beamsR, cutoff, residuals)
