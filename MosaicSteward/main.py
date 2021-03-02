@@ -90,7 +90,7 @@ def main(argv):
         residuals = [tt.replace('image.fits', 'residual.fits') for tt in images]
         residualsR = [tt.replace('image.fits', 'residualR.fits') for tt in images]
     else:
-        log.info('Will generate a mosaic from the input images. If you would also like mosaics to be made from the associated models and residuals, please re-run with the "--associated-mosaics" argument enabled.')
+        log.info("Will generate a mosaic from the input images. If you would also like mosaics to be made from the associated models and residuals, please re-run with the '--associated-mosaics' argument enabled.")
 
     log.info('Checking for images and beams')
     make_mosaic.final_check_for_files(input_dir, images, beams)  # This function raises an error and exits if files are not found
@@ -101,7 +101,7 @@ def main(argv):
             input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname)
         make_mosaic.use_montage_for_regridding(
             input_dir, output_dir, mosaic_type, 'pb', images, imagesR, beams, beamsR, outname)
-    if args.regrid:
+    elif args.regrid:
         log.info('Checking for regridded images and beams')
         imagesR_dont_exist = check_for_files(output_dir, imagesR)
         if imagesR_dont_exist:
