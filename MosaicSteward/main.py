@@ -124,8 +124,7 @@ def main(argv):
     else:
         log.info(
             'Will use mosaic header {0:s}.hdr and regridded images and beams available on disk'.format(outname))
-
-    make_mosaic.final_check_for_files(output_dir, imagesR, beamsR)  # This function raises an error and exits if files are not found 
+        make_mosaic.final_check_for_files(output_dir, imagesR, beamsR)  # This function raises an error and exits if files are not found 
 
     make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'image', outname, imagesR, beamsR, cutoff, images)
 
@@ -157,8 +156,7 @@ def main(argv):
         else:
             log.info(
                 'Will use regridded models and residuals available on disk'.format(outname))
-
-        make_mosaic.final_check_for_files(output_dir, modelsR, residualsR)
+            make_mosaic.final_check_for_files(output_dir, modelsR, residualsR)
 
         make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'model', outname, modelsR, beamsR, cutoff, models)
         make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'residual', outname, residualsR, beamsR, cutoff, residuals)
