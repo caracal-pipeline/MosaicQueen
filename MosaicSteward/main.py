@@ -125,18 +125,37 @@ def main(argv):
 
     make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'image', outname, imagesR, beamsR, cutoff, images)
 
-    if args.associated_mosaics:
 
-        check_for_files(input_dir, models)
-        check_for_files(input_dir, residuals)
-        log.info('All models and residuals found on disk')
+    if args.associated_mosaics:  # Code is more readable by keeping these mosaics separate
 
-        if args.regrid:
+        log.info('Checking for models and residuals')
+        make_mosaic.final_check_for_files(input_dir, images, beams)  # This function raises an error and exits if files are not found
+
+        if args.force_regrid:
+            log.info('You have asked for all regridded files to be created by this run, even if they are already on disk')
             make_mosaic.use_montage_for_regridding(
-                input_dir, output_dir, mosaic_type, models, residuals, modelsR, residualsR, outname)
+                input_dir, output_dir, mosaic_type, 'model', models, modelsR, beams, beamsR, outname)
+            make_mosaic.use_montage_for_regridding(
+                input_dir, output_dir, mosaic_type, 'residual', residuals, residualsR, beams, beamsR, outname)
+        elif args.regrid:
+            log.info('Checking for regridded models and residuals')
+            modelsR_dont_exist = check_for_files(output_dir, modelsR)
+            if modelsR_dont_exist:
+                log.info('Regridded models are not all in place, so using montage to create them')
+                make_mosaic.use_montage_for_regridding(
+                    input_dir, output_dir, mosaic_type, 'model', models, modelsR, beams, beamsR, outname)
+            else:
+                log.info('Regridded models are all in place')
+            residualsR_dont_exist = check_for_files(output_dir, residualsR)
+            if residualsR_dont_exist:
+                log.info('Regridded residuals are not all in place, so using montage to create them')
+                make_mosaic.use_montage_for_regridding(
+                    input_dir, output_dir, mosaic_type, 'residual', residuals, residualsR, beams, beamsR, outname)
+            else:
+                log.info('Regridded residuals are all in place')
         else:
             log.info(
-                'Will use regridded models and residuals available on disc'.format(outname))
+                'Will use regridded models and residuals available on disk'.format(outname))
 
         make_mosaic.check_for_regridded_files(output_dir, modelsR, residualsR)
 
