@@ -75,7 +75,6 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
     log.info('Running montage tasks to create mosaic header ...')
     # Create an image list
     create_montage_list(images, '{0:s}/{1:s}_{2:s}_fields'.format(output_dir,outname,image_type)) 
-    ### CHECK THAT THE .TBL AND .HDR FILES ARE THE SAME, WHATEVER THE IMAGE_TYPE. THEN CAN TAKE THE STRING OUT AGAIN
     #print(sys.stdout)
     Run('mImgtbl -t {0:s}/{1:s}_{2:s}_fields {3:s} {0:s}/{1:s}_{2:s}_fields.tbl'.format(output_dir,outname,image_type,input_dir))
     # Create mosaic header
