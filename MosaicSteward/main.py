@@ -108,11 +108,15 @@ def main(argv):
             log.info('Regridded images are not all in place, so using montage to create them')
             make_mosaic.use_montage_for_regridding(
                 input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname)
+        else:
+            log.info('Regridded images are all in place')
         beamsR_dont_exist = check_for_files(output_dir, beamsR)
         if beamsR_dont_exist:  
             log.info('Regridded beams are not all in place, so using montage to create them')
             make_mosaic.use_montage_for_regridding(
                 input_dir, output_dir, mosaic_type, 'pb', images, imagesR, beams, beamsR, outname)
+        else:
+            log.info('Regridded beams are all in place')
     else:
         log.info(
             'Will use mosaic header {0:s}.hdr and regridded images and beams available on disk'.format(outname))
