@@ -72,7 +72,15 @@ def make_mosaic_header(mosaic_type, t_head):
 def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname):
                                # image_type should be 'image', 'pb', 'model', or 'residual'
 
-    if image_type != 'pb':
+    # Which montage program is used for regridding depends on whether the image is 2D or 3D
+    if mosaic_type == 'spectral':
+        montage_projection = 'mProjectCube'
+        montage_add = 'mAddCube'
+    if mosaic_type == 'continuum':
+        montage_projection = 'mProject'
+        montage_add = 'mAdd'
+    
+    if image_type != 'pb':  # i.e. creating a header for 'image', 'model', or 'residual'
         log.info('Running montage tasks to create mosaic header ...')
         # Create an image list
         create_montage_list(images, '{0:s}/{1:s}_{2:s}_fields'.format(output_dir,outname,image_type)) 
@@ -81,28 +89,6 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         # Create mosaic header
         Run('mMakeHdr {0:s}/{1:s}_{2:s}_fields.tbl {0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type))
     
-    # Which montage program is used for regridding depends on whether the image is 2D or 3D
-    if mosaic_type == 'spectral':
-        montage_projection = 'mProjectCube'
-        montage_add = 'mAddCube'
-    if mosaic_type == 'continuum':
-        montage_projection = 'mProject'
-        montage_add = 'mAdd'
-
-    if image_type == 'pb':  # To maintain the familiar _beams_regrid filenames
-        log.info('Running montage tasks to regrid beams...')
-        # Reproject the input beams
-        for bb in beams:
-            # Assuming that an 'image' run of this function is always called beforehand
-            Run(montage_projection + ' {0:s}/{1:s} {2:s}/{3:s} {2:s}/{4:s}_image.hdr'.format( 
-                input_dir, bb, output_dir, bb.replace('pb.fits', 'pbR.fits'), outname))
-        # Create a reprojected-beams metadata file
-        create_montage_list(beamsR, '{0:s}/{1:s}_beams_regrid'.format(output_dir,outname))
-        Run('mImgtbl -t {0:s}/{1:s}_beams_regrid {0:s} {0:s}/{1:s}_beams_regrid.tbl'.format(output_dir,outname))
-        # Co-add the reprojected beams
-        #Run(montage_add + ' -p . {0:s}_beams_regrid.tbl {0:s}.hdr {0:s}_pb.fits'.format(outname))
-    
-    else:
         log.info('Running montage tasks to regrid files ...')
         # Reproject the input images
         for cc in images:
@@ -113,6 +99,19 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         Run('mImgtbl -d -t {0:s}/{1:s}_{2:s}_fields_regrid {0:s} {0:s}/{1:s}_{2:s}_fields_regrid.tbl'.format(output_dir,outname,image_type)) # '-d' flag added to aid de-bugging
         # Co-add the reprojected images
         #Run(montage_add + ' -p . {0:s}_{1:s}_fields_regrid.tbl {0:s}_{1:s}.hdr {0:s}.fits'.format(outname,image_type))
+
+    else:  # i.e. for image_type == 'pb', to maintain the familiar _beams_regrid filenames
+        log.info('Running montage tasks to regrid beams...')
+        # Reproject the input beams
+        for bb in beams:
+            # Assuming that an image_type == 'image' run of this function was called beforehand
+            Run(montage_projection + ' {0:s}/{1:s} {2:s}/{3:s} {2:s}/{4:s}_image.hdr'.format( 
+                input_dir, bb, output_dir, bb.replace('pb.fits', 'pbR.fits'), outname))
+        # Create a reprojected-beams metadata file
+        create_montage_list(beamsR, '{0:s}/{1:s}_beams_regrid'.format(output_dir,outname))
+        Run('mImgtbl -t {0:s}/{1:s}_beams_regrid {0:s} {0:s}/{1:s}_beams_regrid.tbl'.format(output_dir,outname))
+        # Co-add the reprojected beams
+        #Run(montage_add + ' -p . {0:s}_beams_regrid.tbl {0:s}.hdr {0:s}_pb.fits'.format(outname))
     
     return 0
 
