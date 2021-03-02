@@ -164,6 +164,6 @@ def main(argv):
         make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'residual', outname, residualsR, beamsR, cutoff, residuals)
 
     # Move the log file to the output directory
-    os.system('mv log-make_mosaic.txt '+output_dir+'/')
+    os.system('mv log-make__mosaic.txt '+output_dir+'/')
 
     return 0
