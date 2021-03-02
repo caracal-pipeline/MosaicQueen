@@ -74,10 +74,10 @@ def main(argv):
             "Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
         raise LookupError("Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
 
-    # Throw an error if the user provides only one image
-    if len(images) < 2:
-        log.error('At least two images must be specified for mosaicking')
-        raise ValueError('At least two images must be specified for mosaicking')
+    # # Throw an error if the user provides only one image
+    # if len(images) < 2:
+    #    log.error('At least two images must be specified for mosaicking')
+    #    raise ValueError('At least two images must be specified for mosaicking')
 
     # 'R' to signify the regridded versions of the different .fits files
     imagesR = [tt.replace('image.fits', 'imageR.fits') for tt in images]
