@@ -125,7 +125,7 @@ def final_check_for_files(directory, imagesR, beamsR):
         except FileNotFoundError:
             log.error('File {0:s} does not exist'.format(directory+'/'+cc))
             raise FileNotFoundError('File {0:s} does not exist'.format(directory+'/'+cc))
-            sys.exit() ### Added as exiting does not appear be quick enough... not sure what's changed...
+            #sys.exit() ### Added as exiting does not appear be quick enough... not sure what's changed...
 
     for bb in beamsR:
         try:
@@ -133,7 +133,7 @@ def final_check_for_files(directory, imagesR, beamsR):
         except FileNotFoundError:
             log.error('File {0:s} does not exist'.format(directory+'/'+bb))
             raise FileNotFoundError('File {0:s} does not exist'.format(directory+'/'+bb))
-            sys.exit()
+            #sys.exit()
 
     log.info('All files found on disk')
 
