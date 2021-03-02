@@ -197,9 +197,9 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
                      np.sqrt(norm_array), overwrite=True, header=moshead)
         fits.writeto('{0:s}/{1:s}_weights.fits'.format(output_dir,outname),
                      np.sqrt(norm_array), overwrite=True, header=moshead)
-        log.info('The following mosaic FITS were written to disc: {0:s}_{1:s}.fits {0:s}_noise.fits {0:s}_weights.fits'.format(outname,image_type))
+        log.info('The following mosaic FITS were written to disk: {0:s}_{1:s}.fits {0:s}_noise.fits {0:s}_weights.fits'.format(outname,image_type))
     else:  # i.e. when making a mosaic of the 'model' or 'residual' .fits files
-        log.info('The following mosaic FITS was written to disc: {0:s}_{1:s}.fits'.format(outname,image_type))
+        log.info('The following mosaic FITS was written to disk: {0:s}_{1:s}.fits'.format(outname,image_type))
     
     log.info('Mosaicking completed')
 
