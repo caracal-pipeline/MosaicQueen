@@ -129,7 +129,7 @@ def main(argv):
     if args.associated_mosaics:  # Code is more readable by keeping these mosaics separate
 
         log.info('Checking for models and residuals')
-        make_mosaic.final_check_for_files(input_dir, images, beams)  # This function raises an error and exits if files are not found
+        make_mosaic.final_check_for_files(input_dir, models, residuals)  # This function raises an error and exits if files are not found
 
         if args.force_regrid:
             log.info('You have asked for all regridded files to be created by this run, even if they are already on disk')
