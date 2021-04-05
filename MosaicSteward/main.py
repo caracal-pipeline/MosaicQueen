@@ -19,6 +19,19 @@ try:
 except NameError:
     FileNotFoundError = IOError
 
+def check_for_files(input_dir, images):
+
+    dont_exist = False 
+    for tt in images:
+        try:
+            open(input_dir+'/'+tt)
+        except FileNotFoundError:
+            log.error('File {0:s} does not exist'.format(input_dir+'/'+tt))
+            dont_exist = True 
+
+    return dont_exist
+
+
 def main(argv):
 
     parser = ArgumentParser(description="Run make_mosaic over the targets")
@@ -26,18 +39,25 @@ def main(argv):
     parser.add_argument("-i", "--input",
                         help="The directory that contains the (2D or 3D) images and beams.")
     parser.add_argument("-m", "--mosaic-type",
-                        help="State 'continuum' or 'spectral' as the type of mosaic to be made.")
-    parser.add_argument("-d", "--domontage", action="store_true",
-                        help="Use montage for regridding the images and beams.")
+                        help="State 'continuum' or 'spectral' as the type of (image) mosaic to be made.")
+    parser.add_argument("-a", "--associated-mosaics", action="store_true",
+                        help="Also make mosaics of the associated 'model' and 'residual' .fits files.")
+    parser.add_argument("-r", "--regrid", action="store_true",
+                        help="Use montage for regridding the images and beams."
+                              "Also regrid the 'model' and 'residual' files, if '--associated-mosaics' is enabled.")
+    parser.add_argument("-f", "--force-regrid", action="store_true",
+                        help="If the user wants newly-regridded files, this '--force-regrid' argument should be enabled."
+                              "(If '--regrid' is enabled instead, the package will first check whether regridded files already exist." 
+                              "If they are found, regridding will not proceed because this is a time-consuming step.)")
     parser.add_argument("-c", "--cutoff", type=float, default=0.1,
-                         help="The cutoff in the primary beam to use (assuming a Gaussian at the moment)."
+                        help="The cutoff in the primary beam to use (assuming a Gaussian at the moment)."
                               "E.g. The default of 0.1 means going down to the 10 percent level for each pointing.")
     parser.add_argument("-n", "--name", default="mymosaic",
                         help="The prefix to be used for output files.")
     parser.add_argument("-t", "--target-images", action="append",
-                         help="The filenames of each target/pointing image to be mosaicked. A suffix of 'image.fits' is expected, and this is replaced by 'pb.fits' in order to locate the corresponding beams (which are also required as input).")
+                        help="The filenames of each target/pointing image to be mosaicked. A suffix of 'image.fits' is expected, and this is replaced by 'pb.fits' in order to locate the corresponding beams (which are also required as input).")
     parser.add_argument("-o", "--output",
-                         help="The directory for all output files.")
+                        help="The directory for all output files.")
 
     args = parser.parse_args(argv)
     input_dir = args.input
@@ -54,42 +74,92 @@ def main(argv):
             "Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
         raise LookupError("Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
 
-    # Throw an error if the user provides only one image
-    if len(images) < 2:
-        log.error('At least two images must be specified for mosaicking')
-        raise ValueError('At least two images must be specified for mosaicking')
+    # # Throw an error if the user provides only one image
+    # if len(images) < 2:
+    #    log.error('At least two images must be specified for mosaicking')
+    #    raise ValueError('At least two images must be specified for mosaicking')
 
-    beams = [tt.replace('image.fits', 'pb.fits') for tt in images]
+    # 'R' to signify the regridded versions of the different .fits files
     imagesR = [tt.replace('image.fits', 'imageR.fits') for tt in images]
+    beams = [tt.replace('image.fits', 'pb.fits') for tt in images]
     beamsR = [tt.replace('image.fits', 'pbR.fits') for tt in images]
+    if args.associated_mosaics:
+        log.info('Will generate mosaics made from the input images, their associated models, and their residuals')
+        models = [tt.replace('image.fits', 'model.fits') for tt in images]
+        modelsR = [tt.replace('image.fits', 'modelR.fits') for tt in images]
+        residuals = [tt.replace('image.fits', 'residual.fits') for tt in images]
+        residualsR = [tt.replace('image.fits', 'residualR.fits') for tt in images]
+    else:
+        log.info("Will generate a mosaic from the input images. If you would also like mosaics to be made from the associated models and residuals, please re-run with the '--associated-mosaics' argument enabled.")
 
-    for tt in images:
-        try:
-            open(input_dir+'/'+tt)
-        except FileNotFoundError:
-            log.error('File {0:s} does not exist'.format(input_dir+'/'+tt))
-            raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+tt))
+    log.info('Checking for images and beams')
+    make_mosaic.final_check_for_files(input_dir, images, beams)  # This function raises an error and exits if files are not found
 
-    for bb in beams:
-        try:
-            open(input_dir+'/'+bb)
-        except FileNotFoundError:
-            log.error('File {0:s} does not exist'.format(input_dir+'/'+bb)) 
-            raise FileNotFoundError('File {0:s} does not exist'.format(input_dir+'/'+bb))
+    if args.associated_mosaics:  # Want to be sure that all of the ingredients are in place before doing any mosaicking
+        log.info('Checking for models and residuals')
+        make_mosaic.final_check_for_files(input_dir, models, residuals)  # Function raises an error and should exit if files are not found
 
-    log.info('All images and beams found on disc')
-
-
-    if args.domontage:
+    if args.force_regrid:
+        log.info('You have asked for all regridded files to be created by this run, even if they are already on disk') 
         make_mosaic.use_montage_for_regridding(
-            input_dir, output_dir, mosaic_type, images, beams, imagesR, beamsR, outname)
+            input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname)
+        make_mosaic.use_montage_for_regridding(
+            input_dir, output_dir, mosaic_type, 'pb', images, imagesR, beams, beamsR, outname)
+    elif args.regrid:
+        log.info('Checking for regridded images and beams')
+        imagesR_dont_exist = check_for_files(output_dir, imagesR)
+        if imagesR_dont_exist:
+            log.info('Regridded images are not all in place, so using montage to create them')
+            make_mosaic.use_montage_for_regridding(
+                input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname)
+        else:
+            log.info('Regridded images are all in place')
+        beamsR_dont_exist = check_for_files(output_dir, beamsR)
+        if beamsR_dont_exist:  
+            log.info('Regridded beams are not all in place, so using montage to create them')
+            make_mosaic.use_montage_for_regridding(
+                input_dir, output_dir, mosaic_type, 'pb', images, imagesR, beams, beamsR, outname)
+        else:
+            log.info('Regridded beams are all in place')
     else:
         log.info(
-            'Will use mosaic header {0:s}.hdr and regridded images and beams available on disc'.format(outname))
+            'Will use mosaic header {0:s}.hdr and regridded images and beams available on disk'.format(outname))
+        make_mosaic.final_check_for_files(output_dir, imagesR, beamsR)  # This function raises an error and exits if files are not found 
 
-    make_mosaic.check_for_regridded_files(output_dir, imagesR, beamsR)
+    make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'image', outname, imagesR, beamsR, cutoff, images)
 
-    make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, outname, imagesR, beamsR, cutoff, images)
+
+    if args.associated_mosaics:  # Code is more readable by keeping these mosaics separate
+
+        if args.force_regrid:
+            log.info('You have asked for all regridded files to be created by this run, even if they are already on disk')
+            make_mosaic.use_montage_for_regridding(
+                input_dir, output_dir, mosaic_type, 'model', models, modelsR, beams, beamsR, outname)
+            make_mosaic.use_montage_for_regridding(
+                input_dir, output_dir, mosaic_type, 'residual', residuals, residualsR, beams, beamsR, outname)
+        elif args.regrid:
+            log.info('Checking for regridded models and residuals')
+            modelsR_dont_exist = check_for_files(output_dir, modelsR)
+            if modelsR_dont_exist:
+                log.info('Regridded models are not all in place, so using montage to create them')
+                make_mosaic.use_montage_for_regridding(
+                    input_dir, output_dir, mosaic_type, 'model', models, modelsR, beams, beamsR, outname)
+            else:
+                log.info('Regridded models are all in place')
+            residualsR_dont_exist = check_for_files(output_dir, residualsR)
+            if residualsR_dont_exist:
+                log.info('Regridded residuals are not all in place, so using montage to create them')
+                make_mosaic.use_montage_for_regridding(
+                    input_dir, output_dir, mosaic_type, 'residual', residuals, residualsR, beams, beamsR, outname)
+            else:
+                log.info('Regridded residuals are all in place')
+        else:
+            log.info(
+                'Will use regridded models and residuals available on disk'.format(outname))
+            make_mosaic.final_check_for_files(output_dir, modelsR, residualsR)
+
+        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'model', outname, modelsR, beamsR, cutoff, models)
+        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'residual', outname, residualsR, beamsR, cutoff, residuals)
 
     # Move the log file to the output directory
     os.system('mv log-make_mosaic.txt '+output_dir+'/')
