@@ -7,7 +7,8 @@ requirements = [
 "numpy",
 "futures",
 "astropy",
-"montage-wrapper"
+"montage-wrapper",
+"memory-profiler",
 ]
 
 PACKAGE_NAME = 'MosaicSteward'
