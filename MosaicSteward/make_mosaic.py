@@ -13,6 +13,7 @@ import os
 import numpy as np
 import MosaicSteward
 import argparse
+from memory_profiler import profile
 
 log = MosaicSteward.log
 
@@ -76,7 +77,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
     if mosaic_type == 'spectral':
         montage_projection = 'mProjectCube'
         montage_add = 'mAddCube'
-    if mosaic_type == 'continuum':
+    elif mosaic_type == 'continuum':
         montage_projection = 'mProject'
         montage_add = 'mAdd'
     
@@ -124,25 +125,43 @@ def final_check_for_files(directory, imagesR, beamsR):
             open(directory+'/'+cc)
         except FileNotFoundError:
             log.error('File {0:s} does not exist'.format(directory+'/'+cc))
-            raise FileNotFoundError('File {0:s} does not exist'.format(directory+'/'+cc))
-            #sys.exit() ### Added as exiting does not appear be quick enough... not sure what's changed...
+            raise FileNotFoundError
 
     for bb in beamsR:
         try:
             open(directory+'/'+bb)
         except FileNotFoundError:
             log.error('File {0:s} does not exist'.format(directory+'/'+bb))
-            raise FileNotFoundError('File {0:s} does not exist'.format(directory+'/'+bb))
-            #sys.exit()
+            raise FileNotFoundError
 
     log.info('All files found on disk')
 
     return 0
 
 
-def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, images):
-                                # image_type should be 'image', 'model', or 'residual'
+def update_norm(norm, slc, regrid_hdu, cutoff):
+    """
+        update normalization array
+    """
 
+    tmp = np.nan_to_num(regrid_hdu[0].data)
+    mask = np.nan_to_num(regrid_hdu[0].data>cutoff)
+    tmp = tmp*tmp
+    norm[slc] += tmp*mask
+
+
+def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff):
+    """
+        update mosaic array
+    """
+
+    image_tmp = np.nan_to_num(image_regrid_hdu[0].data)
+    beam_tmp = np.nan_to_num(beam_regrid_hdu[0].data)
+    mask = beam_tmp > cutoff
+    mos[slc] +=  (image_tmp * beam_tmp) * mask
+    
+@profile
+def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, images):
     log.info("Creating a mosaic from '{0:s}' files...".format(image_type))
     moshead = [jj.strip().replace(' ', '').split('=')
             for jj in open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type)).readlines()]
@@ -159,36 +178,31 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
         norm_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
     for ii, bb in zip(imagesR, beamsR):
         log.info('Adding {0:s} to the mosaic ...'.format(ii))
-        f = fits.open(output_dir+'/'+ii)  # i.e. open a specific re-gridded image/model/residual
-        head = f[0].header
-        g = fits.open(output_dir+'/'+bb)  # i.e. open a specific re-gridded beam
+        image_regrid_hdu = fits.open(output_dir+'/'+ii, mmap=True)  # i.e. open a specific re-gridded image
+        head = image_regrid_hdu[0].header
+        beam_regrid_hdu = fits.open(output_dir+'/'+bb, mmap=True)  # i.e. open a specific re-gridded beam
+
         y1 = int(float(moshead['CRPIX2']) - head['CRPIX2'])
         y2 = int(float(moshead['CRPIX2']) - head['CRPIX2'] + head['NAXIS2'])
         x1 = int(float(moshead['CRPIX1']) - head['CRPIX1'])
         x2 = int(float(moshead['CRPIX1']) - head['CRPIX1'] + head['NAXIS1'])
-        # mosaicking with no PB correction
-        # norm_array[:,y1:y2,x1:x2]+=~np.isnan(f[0].data)
-        # mos_array[:,y1:y2,x1:x2]+=np.nan_to_num(f[0].data)
-        # mosaicking with PB correction
-        if mosaic_type == 'spectral':
-            norm_array[:, y1:y2, x1:x2] += (np.nan_to_num(g[0].data)
-                                      * (np.nan_to_num(g[0].data) > cutoff))**2
-            mos_array[:, y1:y2, x1:x2] += np.nan_to_num(f[0].data)*np.nan_to_num(
-                g[0].data)*(np.nan_to_num(g[0].data) > cutoff)
-        if mosaic_type == 'continuum':
-            norm_array[y1:y2, x1:x2] += (np.nan_to_num(g[0].data)
-                                      * (np.nan_to_num(g[0].data) > cutoff))**2
-            mos_array[y1:y2, x1:x2] += np.nan_to_num(f[0].data)*np.nan_to_num(
-                g[0].data)*(np.nan_to_num(g[0].data) > cutoff)
-        f.close()
-        g.close()
 
-    norm_array[norm_array == 0] = np.nan
+        if mosaic_type == 'spectral':
+            slc = slice(None), slice(y1,y2), slice(x1,x2) 
+
+        elif mosaic_type == 'continuum':
+            slc = slice(y1,y2), slice(x1,x2)
+        update_norm(norm_array, slc, beam_regrid_hdu, cutoff)
+        update_mos(mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff)
+        image_regrid_hdu.close()
+        beam_regrid_hdu.close()
+
     moshead = make_mosaic_header(mosaic_type, moshead)
     if mosaic_type == 'spectral':
         f = fits.open(input_dir+'/'+images[0]) 
         zhead = f[0].header
         moshead['ctype3'] = zhead['ctype3']
+        f.close()
     fits.writeto('{0:s}/{1:s}_{2:s}.fits'.format(output_dir,outname,image_type), mos_array /
                  norm_array, overwrite=True, header=moshead)
 

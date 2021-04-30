@@ -10,6 +10,7 @@ from argparse import ArgumentParser
 import MosaicSteward
 import os
 import sys
+import glob
 
 log = MosaicSteward.log
 
@@ -38,8 +39,8 @@ def main(argv):
 
     parser.add_argument("-i", "--input",
                         help="The directory that contains the (2D or 3D) images and beams.")
-    parser.add_argument("-m", "--mosaic-type",
-                        help="State 'continuum' or 'spectral' as the type of (image) mosaic to be made.")
+    parser.add_argument("-m", "--mosaic-type", choices= ["spectral", "continuum"], required = True,
+                        help="State 'continuum' or 'spectral' as the type of mosaic to be made.")
     parser.add_argument("-a", "--associated-mosaics", action="store_true",
                         help="Also make mosaics of the associated 'model' and 'residual' .fits files.")
     parser.add_argument("-r", "--regrid", action="store_true",
@@ -65,10 +66,15 @@ def main(argv):
     cutoff = args.cutoff
     outname = args.name
     output_dir = args.output
+    os.makedirs(output_dir, exist_ok=True)
 
     if args.target_images: 
+        if len(args.target_images) == 1:
+            images = glob.glob(os.path.join(args.input, args.target_images[0]))
+            images = [os.path.basename(item) for item in images]
+        else:
+            images = args.target_images
         log.info('Target images = {}'.format(" ".join(args.target_images)))
-        images = args.target_images
     else:
         log.error(
             "Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
