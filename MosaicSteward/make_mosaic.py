@@ -54,12 +54,12 @@ def make_mosaic_header(mosaic_type, t_head):
     for hh in t_head.keys():
         astro_t_head[hh] = t_head[hh]
     if mosaic_type == 'spectral':
-        for hh in 'crpix1,crval1,cdelt1,crpix2,crval2,cdelt2,crpix3,crval3,cdelt3'.split(','):
+        for hh in 'crpix1,crval1,cdelt1,crpix2,crval2,cdelt2,crota2,crpix3,crval3,cdelt3'.split(','):
             astro_t_head[hh] = float(astro_t_head[hh])
         for hh in 'naxis,naxis1,naxis2,naxis3,equinox'.split(','):
             astro_t_head[hh] = int(astro_t_head[hh])
     if mosaic_type == 'continuum':
-        for hh in 'crpix1,crval1,cdelt1,crpix2,crval2,cdelt2'.split(','):
+        for hh in 'crpix1,crval1,cdelt1,crpix2,crval2,cdelt2,crota2'.split(','):
             astro_t_head[hh] = float(astro_t_head[hh])
         for hh in 'naxis,naxis1,naxis2,equinox'.split(','):
             astro_t_head[hh] = int(astro_t_head[hh])
