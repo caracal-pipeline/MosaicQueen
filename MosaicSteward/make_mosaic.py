@@ -15,6 +15,7 @@ import MosaicSteward
 import argparse
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+from scipy.stats import median_absolute_deviation
 from memory_profiler import profile
 
 log = MosaicSteward.log
@@ -146,7 +147,7 @@ def gauss(x, *p):  # Define model function to be used to fit to the data in esti
     return A*np.exp(-(x-mu)**2/(2.*sigma**2))
 
 
-def estimate_noise(image_regrid_hdu, sigma_guess, check_Gaussian_filename):
+def estimate_noise(image_regrid_hdu, rms_method, sigma_guess, check_Gaussian_filename):
 
     log.info('Estimating the noise level via a Gaussian fit to the negative values...')
 
@@ -156,34 +157,41 @@ def estimate_noise(image_regrid_hdu, sigma_guess, check_Gaussian_filename):
     positive_values = -1.0*negative_values # Flipping to get the other side of the Gaussian
     values = np.append( negative_values, positive_values )
 
-    n, bin_edges, patches = plt.hist(values, bins=100, density=True, facecolor='lightblue')
-    bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
+    if rms_method == 'mad':
 
-    # p0 is the initial guess for the fitting coefficients of the Gaussian (A, mu and sigma above)
-    p0 = [np.max(n), 0., sigma_guess]
-    #log.info('sigma_guess = ' + str(sigma_guess))
+        mad = median_absolute_deviation(values)
+        image_noise_estimate = 1.4826 * mad
 
-    coeff, var_matrix = curve_fit(gauss, bin_centres, n, p0=p0)
+    elif rms_method == 'std':
 
-    # Get the fitted curve
-    n_fit = gauss(bin_centres, *coeff)
+        n, bin_edges, patches = plt.hist(values, bins=100, density=True, facecolor='lightblue')
+        bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
 
-    # Plot to check
-    plt.plot(bin_centres, n, label='Image data', color='blue')
-    plt.plot(bin_centres, n_fit, label='Fitted line', color='red')
-    plt.legend(loc='upper right')
-    plt.xlabel('pixel value')
-    plt.ylabel('number')
-    plt.savefig(check_Gaussian_filename, dpi=72, bbox_inches='tight')
-    plt.close() # Close figure, so that lines don't remain for subsequent calls
+        # p0 is the initial guess for the fitting coefficients of the Gaussian (A, mu and sigma above)
+        p0 = [np.max(n), 0., sigma_guess]
+        #log.info('sigma_guess = ' + str(sigma_guess))
 
-    # Get the fitting parameters, i.e. the mean and standard deviation:
-    log.info('Fitted mean = ' + str(coeff[1]))
-    log.info('Fitted standard deviation = ' + str(coeff[2]))
-    log.info('See ' + check_Gaussian_filename)
-    sigma_noise = coeff[2]
+        coeff, var_matrix = curve_fit(gauss, bin_centres, n, p0=p0)
 
-    return sigma_noise   # This returns a single
+        # Get the fitted curve
+        n_fit = gauss(bin_centres, *coeff)
+
+        # Plot to check
+        plt.plot(bin_centres, n, label='Image data', color='blue')
+        plt.plot(bin_centres, n_fit, label='Fitted line', color='red')
+        plt.legend(loc='upper right')
+        plt.xlabel('pixel value')
+        plt.ylabel('number')
+        plt.savefig(check_Gaussian_filename, dpi=72, bbox_inches='tight')
+        plt.close() # Close figure, so that lines don't remain for subsequent calls
+
+        # Get the fitting parameters, i.e. the mean and standard deviation:
+        log.info('Fitted mean = ' + str(coeff[1]))
+        log.info('Fitted standard deviation = ' + str(coeff[2]))
+        log.info('See ' + check_Gaussian_filename)
+        image_noise_estimate = coeff[2]
+
+    return image_noise_estimate   # This returns a single value
 
 
 
@@ -243,9 +251,9 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
             slc = slice(y1,y2), slice(x1,x2)
         
         check_Gaussian_filename = output_dir + '/' + ii.replace('.fits', '_check_Gaussian_fit.png')
-        sigma_noise = estimate_noise(image_regrid_hdu, sigma_guess, check_Gaussian_filename)
+        image_noise_estimate = estimate_noise(image_regrid_hdu, rms_method, sigma_guess, check_Gaussian_filename)
         update_norm(norm_array, slc, beam_regrid_hdu, cutoff)
-        update_mos(mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff, sigma_noise)
+        update_mos(mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff, image_noise_estimate)
         image_regrid_hdu.close()
         beam_regrid_hdu.close()
 
