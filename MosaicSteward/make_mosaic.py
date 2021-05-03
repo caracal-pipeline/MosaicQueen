@@ -149,8 +149,6 @@ def gauss(x, *p):  # Define model function to be used to fit to the data in esti
 
 def estimate_noise(image_regrid_hdu, rms_method, sigma_guess, check_Gaussian_filename):
 
-    log.info('Estimating the noise level via a Gaussian fit to the negative values...')
-
     image_tmp = np.nan_to_num(image_regrid_hdu[0].data)
     mask = image_tmp < 0.0
     negative_values = image_tmp[mask]
@@ -159,12 +157,16 @@ def estimate_noise(image_regrid_hdu, rms_method, sigma_guess, check_Gaussian_fil
 
     if rms_method == 'mad':
 
+        log.info('Estimating the noise level via the median absolute deviation...')
+
         mad = median_absolute_deviation(values)
         image_noise_estimate = 1.4826 * mad
-        log.info('Noise estimate calculated via MAD = ' + str(image_noise_estimate))
+        log.info('Noise estimate = ' + str(image_noise_estimate))
 
     elif rms_method == 'std':
 
+        log.info('Estimating the noise level via a Gaussian fit to the negative values...')
+        
         n, bin_edges, patches = plt.hist(values, bins=100, density=True, facecolor='lightblue')
         bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
 
