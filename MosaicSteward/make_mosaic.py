@@ -154,7 +154,7 @@ def estimate_noise(image_regrid_hdu):
     positive_values = -1.0*negative_values # Flipping to get the other side of the Gaussian
     values = np.append( negative_values, positive_values )
 
-    n, bin_edges, patches = plt.hist(values, bins=100, density=True, facecolor='blue')
+    n, bin_edges, patches = plt.hist(values, bins=100, density=True, facecolor='lightblue')
     bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
 
     # p0 is the initial guess for the fitting coefficients of the Gaussian (A, mu and sigma above)
@@ -166,16 +166,14 @@ def estimate_noise(image_regrid_hdu):
     n_fit = gauss(bin_centres, *coeff)
 
     # Plot to check
-    plt.plot(bin_centres, n, label='Test data')
-    plt.plot(bin_centres, n_fit, label='Fitted data')
+    plt.plot(bin_centres, n, label='Test data', color='blue')
+    plt.plot(bin_centres, n_fit, label='Fitted data', color='red')
     plt.savefig('check_Gaussian_fit.png', dpi=72, bbox_inches='tight')
 
     # Get the fitting parameters, i.e. the mean and standard deviation:
-    print('Fitted mean = ', coeff[1])
-    print('Fitted standard deviation = ', coeff[2])
+    log.info('Fitted mean = ', coeff[1])
+    log.info('Fitted standard deviation = ', coeff[2])
     sigma_noise = coeff[2]
-
-    exit()
 
     return sigma_noise   # This returns a single
 
