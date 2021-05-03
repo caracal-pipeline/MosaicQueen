@@ -161,6 +161,7 @@ def estimate_noise(image_regrid_hdu, rms_method, sigma_guess, check_Gaussian_fil
 
         mad = median_absolute_deviation(values)
         image_noise_estimate = 1.4826 * mad
+        log.info('Noise estimate calculated via MAD = ' + str(image_noise_estimate))
 
     elif rms_method == 'std':
 
