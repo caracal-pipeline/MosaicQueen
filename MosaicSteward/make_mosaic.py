@@ -143,7 +143,7 @@ def final_check_for_files(directory, imagesR, beamsR):
 
 def gauss(x, *p):  # Define model function to be used to fit to the data in estimate_noise, below
     A, mu, sigma = p
-    return A*numpy.exp(-(x-mu)**2/(2.*sigma**2))
+    return A*np.exp(-(x-mu)**2/(2.*sigma**2))
 
 
 def estimate_noise(image_regrid_hdu):
