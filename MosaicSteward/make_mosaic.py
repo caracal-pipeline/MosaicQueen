@@ -14,7 +14,7 @@ import numpy as np
 import MosaicSteward
 import argparse
 import matplotlib.pyplot as plt
-from lmfit.models import GaussianModel
+from scipy.optimize import curve_fit
 from memory_profiler import profile
 
 log = MosaicSteward.log
@@ -150,7 +150,7 @@ def estimate_noise(image_regrid_hdu):
     
     model = GaussianModel()
     params = model.guess(n, x=bins)
-    result = model.fit(n, x=bins, params)
+    result = model.fit(n, params, x=bins)
     print(result.sigma)
 
     # Plot to check
