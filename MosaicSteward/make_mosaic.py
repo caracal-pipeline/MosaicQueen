@@ -189,7 +189,7 @@ def update_norm(norm, slc, regrid_hdu, cutoff):
     """
 
     tmp = np.nan_to_num(regrid_hdu[0].data)
-    mask = np.nan_to_num(regrid_hdu[0].data>cutoff)
+    mask = np.nan_to_num(regrid_hdu[0].data)>cutoff
     tmp = tmp*tmp
     norm[slc] += tmp*mask
 
