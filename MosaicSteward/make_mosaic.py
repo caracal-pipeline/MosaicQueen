@@ -150,7 +150,7 @@ def update_norm(norm, slc, regrid_hdu, cutoff):
     norm[slc] += tmp*mask
 
 
-def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff):
+def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff, sigma_noise):
     """
         update mosaic array
     """
@@ -192,8 +192,9 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
 
         elif mosaic_type == 'continuum':
             slc = slice(y1,y2), slice(x1,x2)
+            
         update_norm(norm_array, slc, beam_regrid_hdu, cutoff)
-        update_mos(mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff)
+        update_mos(mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff, sigma_noise)
         image_regrid_hdu.close()
         beam_regrid_hdu.close()
 
