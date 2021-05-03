@@ -151,17 +151,14 @@ def estimate_noise(image_regrid_hdu):
     image_tmp = np.nan_to_num(image_regrid_hdu[0].data)
     mask = image_tmp < 0.0
     negative_values = image_tmp[mask]
+    positive_values = -1.0*negative_values # Flipping to get the other side of the Gaussian
+    values = np.append( negative_values, positive_values )
 
-    #print(np.min(negative_values))
-    #print(np.max(negative_values))
-    #print('Made it to here fine')
-    #exit()
-
-    n, bin_edges, patches = plt.hist(negative_values, bins=100, facecolor='blue')
+    n, bin_edges, patches = plt.hist(values, bins=100, density=True, facecolor='blue')
     bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
  
     # p0 is the initial guess for the fitting coefficients of the Gaussian (A, mu and sigma above)
-    p0 = [1., 0., 1.]
+    p0 = [1., 0., 0.1]
 
     coeff, var_matrix = curve_fit(gauss, bin_centres, n, p0=p0)
 
