@@ -139,17 +139,12 @@ def final_check_for_files(directory, imagesR, beamsR):
     return 0
 
 
-def estimate_noise(directory, imagesR):
+def estimate_noise(image_regrid_hdu):
 
-    sigma_noise = []
-
-    for regridded_image in imagesR:
-        open(directory+'/'+regridded_image)
+    image_tmp = np.nan_to_num(image_regrid_hdu[0].data)
 
 
-        sigma_noise.append(estimate_for_current_image)
-
-    return sigma_noise   # This returns a list of values
+    return sigma_noise   # This returns a single
 
 
 
