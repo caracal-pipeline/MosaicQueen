@@ -156,9 +156,9 @@ def estimate_noise(image_regrid_hdu):
 
     n, bin_edges, patches = plt.hist(values, bins=100, density=True, facecolor='blue')
     bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
- 
+
     # p0 is the initial guess for the fitting coefficients of the Gaussian (A, mu and sigma above)
-    p0 = [1., 0., 0.1]
+    p0 = [np.max(n), 0., 0.1]
 
     coeff, var_matrix = curve_fit(gauss, bin_centres, n, p0=p0)
 
