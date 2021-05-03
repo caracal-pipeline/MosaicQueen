@@ -141,21 +141,36 @@ def final_check_for_files(directory, imagesR, beamsR):
     return 0
 
 
+def gauss(x, *p):  # Define model function to be used to fit to the data in estimate_noise, below
+    A, mu, sigma = p
+    return A*numpy.exp(-(x-mu)**2/(2.*sigma**2))
+
+
 def estimate_noise(image_regrid_hdu):
 
     image_tmp = np.nan_to_num(image_regrid_hdu[0].data)
     negative_values = image_tmp < 0.0
     
-    n, bins, patches = plt.hist(negative_values, 100, normed=1, facecolor='blue')
-    
-    model = GaussianModel()
-    params = model.guess(n, x=bins)
-    result = model.fit(n, params, x=bins)
-    print(result.sigma)
+    n, bin_edges, patches = plt.hist(negative_values, 100, normed=1, facecolor='blue')
+    bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
+ 
+    # p0 is the initial guess for the fitting coefficients of the Gaussian (A, mu and sigma above)
+    p0 = [1., 0., 1.]
+
+    coeff, var_matrix = curve_fit(gauss, bin_centres, hist, p0=p0)
+
+    # Get the fitted curve
+    hist_fit = gauss(bin_centres, *coeff)
 
     # Plot to check
-    plt.plot(bins, result.best_fit, 'r-')
+    plt.plot(bin_centres, hist, label='Test data')
+    plt.plot(bin_centres, hist_fit, label='Fitted data')
     plt.savefig('check_Gaussian_fit.png', dpi=72, bbox_inches='tight')
+
+    # Get the fitting parameters, i.e. the mean and standard deviation:
+    print('Fitted mean = ', coeff[1])
+    print('Fitted standard deviation = ', coeff[2])
+    sigma_noise = coeff[2]
 
     exit()
 
