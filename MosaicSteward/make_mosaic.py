@@ -170,6 +170,9 @@ def estimate_noise(image_regrid_hdu, check_Gaussian_filename):
     # Plot to check
     plt.plot(bin_centres, n, label='Test data', color='blue')
     plt.plot(bin_centres, n_fit, label='Fitted data', color='red')
+    plt.legend(loc='upper right')
+    plt.xlabel('pixel value')
+    plt.ylabel('number')
     plt.savefig(check_Gaussian_filename, dpi=72, bbox_inches='tight')
     plt.close() # Close figure, so that lines don't remain for subsequent calls
 
