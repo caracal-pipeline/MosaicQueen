@@ -148,6 +148,8 @@ def gauss(x, *p):  # Define model function to be used to fit to the data in esti
 
 def estimate_noise(image_regrid_hdu, check_Gaussian_filename):
 
+    log.info('Estimating the noise level via a Gaussian fit to the negative values...')
+
     image_tmp = np.nan_to_num(image_regrid_hdu[0].data)
     mask = image_tmp < 0.0
     negative_values = image_tmp[mask]
@@ -174,6 +176,7 @@ def estimate_noise(image_regrid_hdu, check_Gaussian_filename):
     # Get the fitting parameters, i.e. the mean and standard deviation:
     log.info('Fitted mean = ' + str(coeff[1]))
     log.info('Fitted standard deviation = ' + str(coeff[2]))
+    log.info('See ' + check_Gaussian_filename)
     sigma_noise = coeff[2]
 
     return sigma_noise   # This returns a single
