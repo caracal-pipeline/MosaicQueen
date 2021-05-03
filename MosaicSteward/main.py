@@ -54,12 +54,17 @@ def main(argv):
                         help="The cutoff in the primary beam to use (assuming a Gaussian at the moment)."
                               "E.g. The default of 0.1 means going down to the 10 percent level for each pointing.")
     parser.add_argument("-s", "--sigma-guess", type=float, default=0.001,
-                        help="An initial guess of the noise level in the input images, to aid Gaussian fit to negative pixel values."
-                             "The default of 0.001 assumes that the pixel values are in units of Jy/beam (so sigma ~ 1 mJy/beam).")
+                        help="An initial guess of the noise level in the input images, if user wishes this to be more-accurately"
+                             "determined via a Gaussian fit to negative pixel-values. The default of 0.001 assumes that the "
+                             "pixel values are in units of Jy/beam (so sigma ~ 1 mJy/beam).")
+    parser.add_argument("-u", "--use-mad", action="store_true",
+                        help="If enabled, the noise level in the input images will be determined via the median absolute deviation (MAD)."
+                             "(This parameter overrides --sigma-guess, if the later is specified.)")
     parser.add_argument("-n", "--name", default="mymosaic",
                         help="The prefix to be used for output files.")
     parser.add_argument("-t", "--target-images", action="append",
-                        help="The filenames of each target/pointing image to be mosaicked. A suffix of 'image.fits' is expected, and this is replaced by 'pb.fits' in order to locate the corresponding beams (which are also required as input).")
+                        help="The filenames of each target/pointing image to be mosaicked. A suffix of 'image.fits' is expected, "
+                             "and this is replaced by 'pb.fits' in order to locate the corresponding beams (which are also required as input).")
     parser.add_argument("-o", "--output",
                         help="The directory for all output files.")
 
