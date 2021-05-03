@@ -53,13 +53,14 @@ def main(argv):
     parser.add_argument("-c", "--cutoff", type=float, default=0.1,
                         help="The cutoff in the primary beam to use (assuming a Gaussian at the moment)."
                               "E.g. The default of 0.1 means going down to the 10 percent level for each pointing.")
-    parser.add_argument("-s", "--sigma-guess", type=float, default=0.02,
+    parser.add_argument("-s", "--statistic", choices= ["mad", "std"], required = True,
+                        help="State 'mad' (median absolute deviation) or 'std' (standard deviation) as the method to be used for " 
+                             "estimating the noise level in the input images. This will be derived using the negative pixel-values " 
+                             "(and their reflection about zero.)")
+    parser.add_argument("-g", "--guess-std", type=float, default=0.02,
                         help="An initial guess of the noise level in the input images, if user wishes this to be more-accurately"
                              "determined via a Gaussian fit to negative pixel-values. The default of 0.02 assumes that the "
-                             "pixel values are in units of Jy/beam (so sigma ~ 20 mJy/beam).")
-    parser.add_argument("-u", "--use-mad", action="store_true",
-                        help="If enabled, the noise level in the input images will be determined via the median absolute deviation (MAD)."
-                             "(This parameter overrides --sigma-guess, if the later is specified.)")
+                             "pixel values are in units of Jy/beam, so a standard deviation (std) of ~ 20 mJy/beam).")
     parser.add_argument("-n", "--name", default="mymosaic",
                         help="The prefix to be used for output files.")
     parser.add_argument("-t", "--target-images", action="append",
@@ -72,7 +73,7 @@ def main(argv):
     input_dir = args.input
     mosaic_type = args.mosaic_type
     cutoff = args.cutoff
-    sigma_guess = args.sigma_guess
+    sigma_guess = args.guess_std
     outname = args.name
     output_dir = args.output
     os.makedirs(output_dir, exist_ok=True)
