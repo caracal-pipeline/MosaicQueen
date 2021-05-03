@@ -149,8 +149,14 @@ def gauss(x, *p):  # Define model function to be used to fit to the data in esti
 def estimate_noise(image_regrid_hdu):
 
     image_tmp = np.nan_to_num(image_regrid_hdu[0].data)
-    negative_values = image_tmp < 0.0
-    
+    mask = image_tmp < 0.0
+    negative_values = image_tmp[mask]
+
+    #print(np.min(negative_values))
+    #print(np.max(negative_values))
+    #print('Made it to here fine')
+    #exit()
+
     n, bin_edges, patches = plt.hist(negative_values, bins=100, facecolor='blue')
     bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
  
@@ -231,7 +237,10 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
 
         elif mosaic_type == 'continuum':
             slc = slice(y1,y2), slice(x1,x2)
-            
+        
+        #print('Made it to here fine')
+        #exit()
+
         sigma_noise = estimate_noise(image_regrid_hdu)
         update_norm(norm_array, slc, beam_regrid_hdu, cutoff)
         update_mos(mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff, sigma_noise)
