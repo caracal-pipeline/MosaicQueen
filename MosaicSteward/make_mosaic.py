@@ -160,8 +160,7 @@ def estimate_noise(image_regrid_hdu, check_Gaussian_filename):
     bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
 
     # p0 is the initial guess for the fitting coefficients of the Gaussian (A, mu and sigma above)
-    p0 = [np.max(n), 0., 0.02]
-    log.info( 'np.max(n) = ' + str(np.max(n)) )
+    p0 = [np.max(n), 0., 0.01]
 
     coeff, var_matrix = curve_fit(gauss, bin_centres, n, p0=p0)
 
