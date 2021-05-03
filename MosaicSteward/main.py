@@ -53,10 +53,10 @@ def main(argv):
     parser.add_argument("-c", "--cutoff", type=float, default=0.1,
                         help="The cutoff in the primary beam to use (assuming a Gaussian at the moment)."
                               "E.g. The default of 0.1 means going down to the 10 percent level for each pointing.")
-    parser.add_argument("-s", "--sigma-guess", type=float, default=0.001,
+    parser.add_argument("-s", "--sigma-guess", type=float, default=0.02,
                         help="An initial guess of the noise level in the input images, if user wishes this to be more-accurately"
-                             "determined via a Gaussian fit to negative pixel-values. The default of 0.001 assumes that the "
-                             "pixel values are in units of Jy/beam (so sigma ~ 1 mJy/beam).")
+                             "determined via a Gaussian fit to negative pixel-values. The default of 0.02 assumes that the "
+                             "pixel values are in units of Jy/beam (so sigma ~ 20 mJy/beam).")
     parser.add_argument("-u", "--use-mad", action="store_true",
                         help="If enabled, the noise level in the input images will be determined via the median absolute deviation (MAD)."
                              "(This parameter overrides --sigma-guess, if the later is specified.)")
