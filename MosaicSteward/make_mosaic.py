@@ -13,6 +13,8 @@ import os
 import numpy as np
 import MosaicSteward
 import argparse
+import matplotlib.pyplot as plt
+from lmfit.models import GaussianModel
 from memory_profiler import profile
 
 log = MosaicSteward.log
@@ -142,7 +144,20 @@ def final_check_for_files(directory, imagesR, beamsR):
 def estimate_noise(image_regrid_hdu):
 
     image_tmp = np.nan_to_num(image_regrid_hdu[0].data)
+    negative_values = image_tmp < 0.0
+    
+    n, bins, patches = plt.hist(negative_values, 100, normed=1, facecolor='blue')
+    
+    model = GaussianModel()
+    params = model.guess(n, x=bins)
+    result = model.fit(n, x=bins, params)
+    print(result.sigma)
 
+    # Plot to check
+    plt.plot(bins, result.best_fit, 'r-')
+    plt.savefig('check_Gaussian_fit.png', dpi=72, bbox_inches='tight')
+
+    exit()
 
     return sigma_noise   # This returns a single
 
@@ -202,6 +217,7 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
         elif mosaic_type == 'continuum':
             slc = slice(y1,y2), slice(x1,x2)
             
+        sigma_noise = estimate_noise(image_regrid_hdu)
         update_norm(norm_array, slc, beam_regrid_hdu, cutoff)
         update_mos(mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff, sigma_noise)
         image_regrid_hdu.close()
