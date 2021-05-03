@@ -139,6 +139,20 @@ def final_check_for_files(directory, imagesR, beamsR):
     return 0
 
 
+def estimate_noise(directory, imagesR):
+
+    sigma_noise = []
+
+    for regridded_image in imagesR:
+        open(directory+'/'+regridded_image)
+
+
+        sigma_noise.append(estimate_for_current_image)
+
+    return sigma_noise   # This returns a list of values
+
+
+
 def update_norm(norm, slc, regrid_hdu, cutoff):
     """
         update normalization array
