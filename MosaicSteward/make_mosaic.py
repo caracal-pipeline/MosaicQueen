@@ -161,6 +161,7 @@ def estimate_noise(image_regrid_hdu, sigma_guess, check_Gaussian_filename):
 
     # p0 is the initial guess for the fitting coefficients of the Gaussian (A, mu and sigma above)
     p0 = [np.max(n), 0., sigma_guess]
+    #log.info('sigma_guess = ' + str(sigma_guess))
 
     coeff, var_matrix = curve_fit(gauss, bin_centres, n, p0=p0)
 
