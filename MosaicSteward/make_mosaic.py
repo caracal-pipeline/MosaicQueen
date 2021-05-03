@@ -146,7 +146,7 @@ def gauss(x, *p):  # Define model function to be used to fit to the data in esti
     return A*np.exp(-(x-mu)**2/(2.*sigma**2))
 
 
-def estimate_noise(image_regrid_hdu):
+def estimate_noise(image_regrid_hdu, check_Gaussian_filename):
 
     image_tmp = np.nan_to_num(image_regrid_hdu[0].data)
     mask = image_tmp < 0.0
@@ -168,7 +168,7 @@ def estimate_noise(image_regrid_hdu):
     # Plot to check
     plt.plot(bin_centres, n, label='Test data', color='blue')
     plt.plot(bin_centres, n_fit, label='Fitted data', color='red')
-    plt.savefig('check_Gaussian_fit.png', dpi=72, bbox_inches='tight')
+    plt.savefig(check_Gaussian_filename, dpi=72, bbox_inches='tight')
 
     # Get the fitting parameters, i.e. the mean and standard deviation:
     log.info('Fitted mean = ', coeff[1])
@@ -233,10 +233,8 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
         elif mosaic_type == 'continuum':
             slc = slice(y1,y2), slice(x1,x2)
         
-        #print('Made it to here fine')
-        #exit()
-
-        sigma_noise = estimate_noise(image_regrid_hdu)
+        check_Gaussian_filename = output_dir + '/' + ii.replace('.fits', '_check_Gaussian_fit.png')
+        sigma_noise = estimate_noise(image_regrid_hdu, check_Gaussian_filename)
         update_norm(norm_array, slc, beam_regrid_hdu, cutoff)
         update_mos(mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff, sigma_noise)
         image_regrid_hdu.close()
