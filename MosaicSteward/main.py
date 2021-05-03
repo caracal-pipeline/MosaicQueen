@@ -67,6 +67,7 @@ def main(argv):
     input_dir = args.input
     mosaic_type = args.mosaic_type
     cutoff = args.cutoff
+    sigma_guess = args.sigma_guess
     outname = args.name
     output_dir = args.output
     os.makedirs(output_dir, exist_ok=True)
@@ -135,7 +136,7 @@ def main(argv):
             'Will use mosaic header {0:s}.hdr and regridded images and beams available on disk'.format(outname))
         make_mosaic.final_check_for_files(output_dir, imagesR, beamsR)  # This function raises an error and exits if files are not found 
 
-    make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'image', outname, imagesR, beamsR, cutoff, images)
+    make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'image', outname, imagesR, beamsR, cutoff, sigma_guess, images)
 
 
     if args.associated_mosaics:  # Code is more readable by keeping these mosaics separate
@@ -167,8 +168,8 @@ def main(argv):
                 'Will use regridded models and residuals available on disk'.format(outname))
             make_mosaic.final_check_for_files(output_dir, modelsR, residualsR)
 
-        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'model', outname, modelsR, beamsR, cutoff, models)
-        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'residual', outname, residualsR, beamsR, cutoff, residuals)
+        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'model', outname, modelsR, beamsR, cutoff, sigma_guess, models)
+        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'residual', outname, residualsR, beamsR, cutoff, sigma_guess, residuals)
 
     # Move the log file to the output directory
     os.system('mv log-make_mosaic.txt '+output_dir+'/')

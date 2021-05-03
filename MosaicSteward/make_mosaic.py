@@ -208,7 +208,7 @@ def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff, sigma_noise)
     mos[slc] +=  (image_tmp * beam_tmp) * mask
     
 @profile
-def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, images):
+def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, sigma_guess, images):
     log.info("Creating a mosaic from '{0:s}' files...".format(image_type))
     moshead = [jj.strip().replace(' ', '').split('=')
             for jj in open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type)).readlines()]
