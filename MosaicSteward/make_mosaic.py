@@ -147,7 +147,7 @@ def gauss(x, *p):  # Define model function to be used to fit to the data in esti
     return A*np.exp(-(x-mu)**2/(2.*sigma**2))
 
 
-def estimate_noise(image_regrid_hdu, rms_method, sigma_guess, check_Gaussian_filename):
+def estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_filename):
 
     image_tmp = np.nan_to_num(image_regrid_hdu[0].data)
     mask = image_tmp < 0.0
@@ -155,7 +155,7 @@ def estimate_noise(image_regrid_hdu, rms_method, sigma_guess, check_Gaussian_fil
     positive_values = -1.0*negative_values # Flipping to get the other side of the Gaussian
     values = np.append( negative_values, positive_values )
 
-    if rms_method == 'mad':
+    if statistic == 'mad':
 
         log.info('Estimating the noise level via the median absolute deviation...')
 
@@ -163,7 +163,7 @@ def estimate_noise(image_regrid_hdu, rms_method, sigma_guess, check_Gaussian_fil
         image_noise_estimate = 1.4826 * mad
         log.info('Noise estimate = ' + str(image_noise_estimate))
 
-    elif rms_method == 'std':
+    elif statistic == 'std':
 
         log.info('Estimating the noise level via a Gaussian fit to the negative values...')
         
@@ -254,7 +254,7 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
             slc = slice(y1,y2), slice(x1,x2)
         
         check_Gaussian_filename = output_dir + '/' + ii.replace('.fits', '_check_Gaussian_fit.png')
-        image_noise_estimate = estimate_noise(image_regrid_hdu, rms_method, sigma_guess, check_Gaussian_filename)
+        image_noise_estimate = estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_filename)
         update_norm(norm_array, slc, beam_regrid_hdu, cutoff)
         update_mos(mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff, image_noise_estimate)
         image_regrid_hdu.close()
