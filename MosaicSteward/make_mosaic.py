@@ -146,7 +146,7 @@ def gauss(x, *p):  # Define model function to be used to fit to the data in esti
     return A*np.exp(-(x-mu)**2/(2.*sigma**2))
 
 
-def estimate_noise(image_regrid_hdu, check_Gaussian_filename):
+def estimate_noise(image_regrid_hdu, sigma_guess, check_Gaussian_filename):
 
     log.info('Estimating the noise level via a Gaussian fit to the negative values...')
 
@@ -160,7 +160,7 @@ def estimate_noise(image_regrid_hdu, check_Gaussian_filename):
     bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
 
     # p0 is the initial guess for the fitting coefficients of the Gaussian (A, mu and sigma above)
-    p0 = [np.max(n), 0., 0.001]
+    p0 = [np.max(n), 0., sigma_guess]
 
     coeff, var_matrix = curve_fit(gauss, bin_centres, n, p0=p0)
 
@@ -241,7 +241,7 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
             slc = slice(y1,y2), slice(x1,x2)
         
         check_Gaussian_filename = output_dir + '/' + ii.replace('.fits', '_check_Gaussian_fit.png')
-        sigma_noise = estimate_noise(image_regrid_hdu, check_Gaussian_filename)
+        sigma_noise = estimate_noise(image_regrid_hdu, sigma_guess, check_Gaussian_filename)
         update_norm(norm_array, slc, beam_regrid_hdu, cutoff)
         update_mos(mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff, sigma_noise)
         image_regrid_hdu.close()
