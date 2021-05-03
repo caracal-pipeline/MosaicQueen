@@ -168,8 +168,8 @@ def estimate_noise(image_regrid_hdu, check_Gaussian_filename):
     n_fit = gauss(bin_centres, *coeff)
 
     # Plot to check
-    plt.plot(bin_centres, n, label='Test data', color='blue')
-    plt.plot(bin_centres, n_fit, label='Fitted data', color='red')
+    plt.plot(bin_centres, n, label='Image data', color='blue')
+    plt.plot(bin_centres, n_fit, label='Fitted line', color='red')
     plt.legend(loc='upper right')
     plt.xlabel('pixel value')
     plt.ylabel('number')
