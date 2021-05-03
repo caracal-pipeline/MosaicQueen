@@ -147,7 +147,7 @@ def main(argv):
     else:
         rms_method = "std"
 
-    make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'image', outname, imagesR, beamsR, cutoff, rms_method, images)
+    make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'image', outname, imagesR, beamsR, cutoff, rms_method, sigma_guess, images)
 
 
     if args.associated_mosaics:  # Code is more readable by keeping these mosaics separate
@@ -179,8 +179,8 @@ def main(argv):
                 'Will use regridded models and residuals available on disk'.format(outname))
             make_mosaic.final_check_for_files(output_dir, modelsR, residualsR)
 
-        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'model', outname, modelsR, beamsR, cutoff, rms_method, models)
-        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'residual', outname, residualsR, beamsR, cutoff, rms_method, residuals)
+        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'model', outname, modelsR, beamsR, cutoff, rms_method, sigma_guess, models)
+        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'residual', outname, residualsR, beamsR, cutoff, rms_method, sigma_guess, residuals)
 
     # Move the log file to the output directory
     os.system('mv log-make_mosaic.txt '+output_dir+'/')
