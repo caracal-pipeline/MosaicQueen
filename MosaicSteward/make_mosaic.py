@@ -171,7 +171,7 @@ def estimate_noise(image_regrid_hdu, check_Gaussian_filename):
     plt.plot(bin_centres, n, label='Test data', color='blue')
     plt.plot(bin_centres, n_fit, label='Fitted data', color='red')
     plt.savefig(check_Gaussian_filename, dpi=72, bbox_inches='tight')
-    plt.clf() # Clear figure, so that lines don't remain for subsequent calls
+    plt.close() # Close figure, so that lines don't remain for subsequent calls
 
     # Get the fitting parameters, i.e. the mean and standard deviation:
     log.info('Fitted mean = ' + str(coeff[1]))
