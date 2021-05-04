@@ -157,7 +157,7 @@ def estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_file
 
     if statistic == 'mad':
 
-        log.info('Estimating the noise level via the median absolute deviation...')
+        log.info('...using the median absolute deviation...')
 
         mad = median_absolute_deviation(values)
         image_noise_estimate = 1.4826 * mad
@@ -165,7 +165,7 @@ def estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_file
 
     elif statistic == 'std':
 
-        log.info('Estimating the noise level via a Gaussian fit to the negative values...')
+        log.info('...using a Gaussian fit to the negative values...')
         
         n, bin_edges, patches = plt.hist(values, bins=100, density=True, facecolor='lightblue')
         bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
@@ -223,6 +223,8 @@ def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff, sigma_noise)
 def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, statistic, sigma_guess, images):
     
     log.info("Creating a mosaic from '{0:s}' files...".format(image_type))
+    
+    # Details for the mosaic header
     moshead = [jj.strip().replace(' ', '').split('=')
             for jj in open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type)).readlines()]
     if ['END'] in moshead:
@@ -236,6 +238,21 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
     if mosaic_type == 'continuum':
         mos_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
         norm_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
+    
+    # Gathering noise estimates for each of the input images
+    all_noise_estimates = []
+    for image in imagesR:
+        log.info('Estimating the noise level of {0:s}...'.format(image))
+        image_regrid_hdu = fits.open(output_dir+'/'+image, mmap=True)  # i.e. open a specific re-gridded image
+        check_Gaussian_filename = output_dir + '/' + image.replace('.fits', '_check_Gaussian_fit.png')
+        image_noise_estimate = estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_filename)    
+        all_noise_estimates.append( image_noise_estimate )
+    log.info(all_noise_estimates) 
+
+    # Determine the relative weighting of each input image
+    image_weightings = [ (sigma)**(-2) for sigma in all_noise_estimates ]  
+
+    # The mosaicking part
     for ii, bb in zip(imagesR, beamsR):
         log.info('Adding {0:s} to the mosaic ...'.format(ii))
         image_regrid_hdu = fits.open(output_dir+'/'+ii, mmap=True)  # i.e. open a specific re-gridded image
@@ -253,13 +270,12 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
         elif mosaic_type == 'continuum':
             slc = slice(y1,y2), slice(x1,x2)
         
-        check_Gaussian_filename = output_dir + '/' + ii.replace('.fits', '_check_Gaussian_fit.png')
-        image_noise_estimate = estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_filename)
         update_norm(norm_array, slc, beam_regrid_hdu, cutoff)
         update_mos(mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff, image_noise_estimate)
         image_regrid_hdu.close()
         beam_regrid_hdu.close()
 
+    # Tidying up and writing
     moshead = make_mosaic_header(mosaic_type, moshead)
     if mosaic_type == 'spectral':
         f = fits.open(input_dir+'/'+images[0]) 
@@ -269,6 +285,7 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
     fits.writeto('{0:s}/{1:s}_{2:s}.fits'.format(output_dir,outname,image_type), mos_array /
                  norm_array, overwrite=True, header=moshead)
 
+    # Creating the accompanying 'noise' and 'weights' mosaics
     if image_type == 'image':  # Only want one copy of the _noise and _weights mosaics to be produced
         fits.writeto('{0:s}/{1:s}_noise.fits'.format(output_dir,outname), 1. /
                      np.sqrt(norm_array), overwrite=True, header=moshead)
