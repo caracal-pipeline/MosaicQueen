@@ -247,17 +247,17 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
         check_Gaussian_filename = output_dir + '/' + image.replace('.fits', '_check_Gaussian_fit.png')
         image_noise_estimate = estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_filename)    
         all_noise_estimates.append( image_noise_estimate )
-    log.info(all_noise_estimates) 
+    #log.info(all_noise_estimates) 
 
     # Determine the relative weighting of each input image
     all_image_weightings = [ (sigma)**(-2) for sigma in all_noise_estimates ]  
     sum_of_the_weights = sum(all_image_weightings)
-    relative_image_weightings = [ (1.0/sum_of_the_weights)*weighting  for weighting in all_image_weightings ]
-    log.info(relative_image_weightings)
-    exit()
+    relative_image_weightings = [ (1.0/sum_of_the_weights)*weighting for weighting in all_image_weightings ]
+    #log.info(relative_image_weightings)
 
     # The mosaicking part
-    for ii, bb, ww in zip(imagesR, beamsR, all_image_weightings):
+    weighting_index = 0
+    for ii, bb in zip(imagesR, beamsR):
         log.info('Adding {0:s} to the mosaic ...'.format(ii))
         image_regrid_hdu = fits.open(output_dir+'/'+ii, mmap=True)  # i.e. open a specific re-gridded image
         head = image_regrid_hdu[0].header
@@ -275,7 +275,8 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
             slc = slice(y1,y2), slice(x1,x2)
         
         update_norm(norm_array, slc, beam_regrid_hdu, cutoff)
-        update_mos( mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff, relative_image_weightings[ww] )
+        update_mos( mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff, relative_image_weightings[weighting_index] )
+        weighting_index = weighting_index + 1
         image_regrid_hdu.close()
         beam_regrid_hdu.close()
 
