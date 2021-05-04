@@ -251,6 +251,10 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
 
     # Determine the relative weighting of each input image
     all_image_weightings = [ (sigma)**(-2) for sigma in all_noise_estimates ]  
+    sum_of_the_weights = sum(all_image_weightings)
+    relative_image_weightings = [ (1.0/sum_of_the_weights)*weighting  for weighting in all_image_weightings ]
+    log.info(relative_image_weightings)
+    exit()
 
     # The mosaicking part
     for ii, bb, ww in zip(imagesR, beamsR, all_image_weightings):
@@ -271,7 +275,7 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
             slc = slice(y1,y2), slice(x1,x2)
         
         update_norm(norm_array, slc, beam_regrid_hdu, cutoff)
-        update_mos( mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff, all_image_weightings[ww] )
+        update_mos( mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff, relative_image_weightings[ww] )
         image_regrid_hdu.close()
         beam_regrid_hdu.close()
 
