@@ -161,7 +161,7 @@ def estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_file
 
         mad = median_absolute_deviation(values)
         image_noise_estimate = 1.4826 * mad
-        log.info('Noise estimate = ' + str(image_noise_estimate))
+        log.info('Noise estimate = ' + str(image_noise_estimate) + ' Jy/beam') # Assumed units
 
     elif statistic == 'std':
 
@@ -189,8 +189,8 @@ def estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_file
         plt.close() # Close figure, so that lines don't remain for subsequent calls
 
         # Get the fitting parameters, i.e. the mean and standard deviation:
-        log.info('Fitted mean = ' + str(coeff[1]))
-        log.info('Fitted standard deviation = ' + str(coeff[2]))
+        log.info('Fitted mean = ' + str(coeff[1]) + ' Jy/beam') # Assumed units
+        log.info('Fitted standard deviation = ' + str(coeff[2]) + ' Jy/beam') # Assumed units
         log.info('See ' + check_Gaussian_filename)
         image_noise_estimate = coeff[2]
 
