@@ -154,14 +154,10 @@ def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff):
     """
         update mosaic array
     """
-    print(image_regrid_hdu[0].data.dtype)
-    print(beam_regrid_hdu[0].data.dtype)
     image_tmp = np.nan_to_num(image_regrid_hdu[0].data)
     beam_tmp = np.nan_to_num(beam_regrid_hdu[0].data)
     mask = beam_tmp > cutoff
     mos[slc] +=  (image_tmp * beam_tmp) * mask
-
-    print(type(mos))
     
 #@profile
 def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, images):
@@ -179,7 +175,7 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
             bitpix_list.append( abs(int(hdul[0]._bitpix)) )
     bitpix = min(bitpix_list)
     dtype = f"float{bitpix}"
-    print(dtype)
+   # delete BITPIX from montage (always 64-bit) so that precision is from input FITS files
     del moshead['BITPIX']
 
     if mosaic_type == 'spectral':
