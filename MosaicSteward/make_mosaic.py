@@ -154,13 +154,16 @@ def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff):
     """
         update mosaic array
     """
-
+    print(image_regrid_hdu[0].data.dtype)
+    print(beam_regrid_hdu[0].data.dtype)
     image_tmp = np.nan_to_num(image_regrid_hdu[0].data)
     beam_tmp = np.nan_to_num(beam_regrid_hdu[0].data)
     mask = beam_tmp > cutoff
     mos[slc] +=  (image_tmp * beam_tmp) * mask
+
+    print(type(mos))
     
-@profile
+#@profile
 def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, images):
     log.info("Creating a mosaic from '{0:s}' files...".format(image_type))
     moshead = [jj.strip().replace(' ', '').split('=')
@@ -168,14 +171,25 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
     if ['END'] in moshead:
         del(moshead[moshead.index(['END'])])
     moshead = {k: v for (k, v) in moshead}   # Creating a dictionary, where 'k' stands for 'keyword' and 'v' stands for 'value'
+    
+    # find image with lowest floating point precision, and set that as precision
+    bitpix_list = []
+    for image in images:
+        with fits.open(os.path.join(input_dir,image)) as hdul:
+            bitpix_list.append( abs(int(hdul[0]._bitpix)) )
+    bitpix = min(bitpix_list)
+    dtype = f"float{bitpix}"
+    print(dtype)
+    del moshead['BITPIX']
+
     if mosaic_type == 'spectral':
         mos_array = np.zeros((int(moshead['NAXIS3']), int(
-            moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
+            moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype=dtype)
         norm_array = np.zeros((int(moshead['NAXIS3']), int(
-            moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
+            moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype=dtype)
     if mosaic_type == 'continuum':
-        mos_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
-        norm_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
+        mos_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype=dtype)
+        norm_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype=dtype)
     for ii, bb in zip(imagesR, beamsR):
         log.info('Adding {0:s} to the mosaic ...'.format(ii))
         image_regrid_hdu = fits.open(output_dir+'/'+ii, mmap=True)  # i.e. open a specific re-gridded image
