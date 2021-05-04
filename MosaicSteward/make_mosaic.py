@@ -209,15 +209,15 @@ def update_norm(norm, slc, regrid_hdu, cutoff):
     norm[slc] += tmp*mask
 
 
-def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff, sigma_noise):
+def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff, image_weighting):
     """
         update mosaic array
     """
 
-    image_tmp = np.nan_to_num(image_regrid_hdu[0].data)
+    weighted_image_tmp = np.nan_to_num(image_regrid_hdu[0].data) * image_weighting
     beam_tmp = np.nan_to_num(beam_regrid_hdu[0].data)
     mask = beam_tmp > cutoff
-    mos[slc] +=  (image_tmp * beam_tmp) * mask
+    mos[slc] +=  (weighted_image_tmp * beam_tmp) * mask
     
 @profile
 def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, statistic, sigma_guess, images):
@@ -250,10 +250,10 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
     log.info(all_noise_estimates) 
 
     # Determine the relative weighting of each input image
-    image_weightings = [ (sigma)**(-2) for sigma in all_noise_estimates ]  
+    all_image_weightings = [ (sigma)**(-2) for sigma in all_noise_estimates ]  
 
     # The mosaicking part
-    for ii, bb in zip(imagesR, beamsR):
+    for ii, bb, ww in zip(imagesR, beamsR, all_image_weightings):
         log.info('Adding {0:s} to the mosaic ...'.format(ii))
         image_regrid_hdu = fits.open(output_dir+'/'+ii, mmap=True)  # i.e. open a specific re-gridded image
         head = image_regrid_hdu[0].header
@@ -271,7 +271,7 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
             slc = slice(y1,y2), slice(x1,x2)
         
         update_norm(norm_array, slc, beam_regrid_hdu, cutoff)
-        update_mos(mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff, image_noise_estimate)
+        update_mos( mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff, all_image_weightings[ww] )
         image_regrid_hdu.close()
         beam_regrid_hdu.close()
 
