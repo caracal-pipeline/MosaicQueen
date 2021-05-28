@@ -94,13 +94,11 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         bitpix = find_lowest_precision(input_dir, images)
         moshead = [jj.strip().replace(' ', '').split('=')
             for jj in open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type)).readlines()]
-        log.info(moshead)
         moshead = [ ['BITPIX', '-'+str(bitpix)] if x==['BITPIX', '-64'] else x for x in moshead ]
-        
-        
-        log.info(moshead)
-        exit()
-        
+        edited_hdr_file = open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type), 'w')
+        moshead = [ " = ".join(x)+"\n" for x in moshead ]
+        edited_hdr_file.writelines(moshead)
+        edited_hdr_file.close()
         
         log.info('Running montage tasks to regrid files ...')
         # Reproject the input images
