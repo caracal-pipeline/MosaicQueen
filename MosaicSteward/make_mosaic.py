@@ -90,10 +90,17 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         # Create mosaic header
         Run('mMakeHdr {0:s}/{1:s}_{2:s}_fields.tbl {0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type))
  
-        # montage specifies BITPIX = -64 but we want BITPIX = -32 if that's the precision of the input images
-        moshead = [jj.strip().replace(' ', '').split('=')
-            for jj in open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type)).readlines()]
-
+        # Edit the .hdr file because montage specifies BITPIX = -64 but we want BITPIX = -32 if that's the precision of the input images
+        bitpix = find_lowest_precision(input_dir, images)
+        lines_of_hdr_file = open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type)).readlines()
+        edited_hdr_file = open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type), 'w')
+        for line in lines_of_hdr_file:
+            if 'BITPIX' in line:
+                new_line = line.replace('-64', '-'+str(bitpix))
+                edited_hdr_file.write(new_line)
+            else:
+                edited_hdr_file.write(line)
+        
         log.info('Running montage tasks to regrid files ...')
         # Reproject the input images
         for cc in images:
