@@ -209,10 +209,10 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
     for ii, bb in zip(imagesR, beamsR):
         log.info('Adding {0:s} to the mosaic ...'.format(ii))
         image_regrid_hdu = fits.open(output_dir+'/'+ii, mmap=True)  # i.e. open a specific re-gridded image
-        image_regrid_hdu[0].image = image_regrid_hdu[0].image.astype('>f4')  # to use the data as 32-bit precision
+        image_regrid_hdu[0] = image_regrid_hdu[0].astype('>f4')  # to use the data as 32-bit precision
         head = image_regrid_hdu[0].header
         beam_regrid_hdu = fits.open(output_dir+'/'+bb, mmap=True)  # i.e. open a specific re-gridded beam
-        beam_regrid_hdu[0].image = beam_regrid_hdu[0].image.astype('>f4')  # to use the data as 32-bit precision 
+        beam_regrid_hdu[0] = beam_regrid_hdu[0].astype('>f4')  # to use the data as 32-bit precision 
  
         y1 = int(float(moshead['CRPIX2']) - head['CRPIX2'])
         y2 = int(float(moshead['CRPIX2']) - head['CRPIX2'] + head['NAXIS2'])
