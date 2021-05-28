@@ -173,9 +173,8 @@ def find_lowest_precision(input_dir, images):
         with fits.open(os.path.join(input_dir,image)) as hdul:
             bitpix_list.append( abs(int(hdul[0]._bitpix)) )
     bitpix = min(bitpix_list)
-    dtype = f"float{bitpix}"
     
-    return dtype
+    return bitpix
 
 
 #@profile
@@ -187,7 +186,8 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
         del(moshead[moshead.index(['END'])])
     moshead = {k: v for (k, v) in moshead}   # Creating a dictionary, where 'k' stands for 'keyword' and 'v' stands for 'value'
     
-    dtype = find_lowest_precision(input_dir, images)
+    bitpix = find_lowest_precision(input_dir, images)
+    dtype = f"float{bitpix}"
     # delete BITPIX from montage (always 64-bit) so that precision is from input FITS files
     del moshead['BITPIX']
 
