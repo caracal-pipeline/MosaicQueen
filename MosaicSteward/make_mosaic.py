@@ -89,7 +89,11 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         Run('mImgtbl -t {0:s}/{1:s}_{2:s}_fields {3:s} {0:s}/{1:s}_{2:s}_fields.tbl'.format(output_dir,outname,image_type,input_dir))
         # Create mosaic header
         Run('mMakeHdr {0:s}/{1:s}_{2:s}_fields.tbl {0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type))
-    
+ 
+        # montage specifies BITPIX = -64 but we want BITPIX = -32 if that's the precision of the input images
+        moshead = [jj.strip().replace(' ', '').split('=')
+            for jj in open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type)).readlines()]
+
         log.info('Running montage tasks to regrid files ...')
         # Reproject the input images
         for cc in images:
