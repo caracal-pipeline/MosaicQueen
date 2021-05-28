@@ -163,6 +163,21 @@ def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff):
     mask = beam_tmp > cutoff
     mos[slc] +=  (image_tmp * beam_tmp) * mask
     
+
+def find_lowest_precision(input_dir, images):
+    """
+        find lowest floating-point precision of the input, and return so that it can be used to set the precision of the output
+    """
+    bitpix_list = []
+    for image in images:
+        with fits.open(os.path.join(input_dir,image)) as hdul:
+            bitpix_list.append( abs(int(hdul[0]._bitpix)) )
+    bitpix = min(bitpix_list)
+    dtype = f"float{bitpix}"
+    
+    return dtype
+
+
 #@profile
 def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, images):
     log.info("Creating a mosaic from '{0:s}' files...".format(image_type))
@@ -172,14 +187,8 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
         del(moshead[moshead.index(['END'])])
     moshead = {k: v for (k, v) in moshead}   # Creating a dictionary, where 'k' stands for 'keyword' and 'v' stands for 'value'
     
-    # find image with lowest floating point precision, and set that as precision
-    bitpix_list = []
-    for image in images:
-        with fits.open(os.path.join(input_dir,image)) as hdul:
-            bitpix_list.append( abs(int(hdul[0]._bitpix)) )
-    bitpix = min(bitpix_list)
-    dtype = f"float{bitpix}"
-   # delete BITPIX from montage (always 64-bit) so that precision is from input FITS files
+    dtype = find_lowest_precision(input_dir, images)
+    # delete BITPIX from montage (always 64-bit) so that precision is from input FITS files
     del moshead['BITPIX']
 
     if mosaic_type == 'spectral':
