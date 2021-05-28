@@ -91,6 +91,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         Run('mMakeHdr {0:s}/{1:s}_{2:s}_fields.tbl {0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type))
  
         # Edit the .hdr file because montage specifies BITPIX = -64 but we want BITPIX = -32 if that's the precision of the input images
+        #log.info('Editing bitpix to match the lowest precision amongst the input images...')
         bitpix = find_lowest_precision(input_dir, images)
         moshead = [jj.strip().replace(' ', '').split('=')
             for jj in open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type)).readlines()]
