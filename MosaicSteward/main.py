@@ -31,7 +31,7 @@ def check_for_files(directory, fits_files, type_of_fits_file, regrid_boolean):
         try:
             open(directory+'/'+ff)
         except FileNotFoundError:
-            dont_exist = False
+            dont_exist = True
             if type_of_fits_file is in exit_if_not_found_list:
                 log.error('File {0:s} does not exist'.format(directory+'/'+ff))
                 raise FileNotFoundError
