@@ -167,15 +167,15 @@ def main(argv):
                 log.info('Regridded models are not all in place, so using montage to create them')
                 make_mosaic.use_montage_for_regridding(
                     input_dir, output_dir, mosaic_type, 'model', models, modelsR, beams, beamsR, outname)
-            else:
-                log.info('Regridded models are all in place')
+            #else:  # redundant
+            #    log.info('Regridded models are all in place')
             residualsR_dont_exist = check_for_files(output_dir, residualsR, 'regridded residuals', args.regrid)
             if residualsR_dont_exist:
                 log.info('Regridded residuals are not all in place, so using montage to create them')
                 make_mosaic.use_montage_for_regridding(
                     input_dir, output_dir, mosaic_type, 'residual', residuals, residualsR, beams, beamsR, outname)
-            else:
-                log.info('Regridded residuals are all in place')
+            #else:  # redundant
+            #    log.info('Regridded residuals are all in place')
         else:
             log.info(
                 'Will use regridded models and residuals available on disk'.format(outname))
