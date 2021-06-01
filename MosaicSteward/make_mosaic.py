@@ -162,7 +162,7 @@ def find_lowest_precision(input_dir, images):
     return bitpix
 
 
-@profile
+#@profile
 def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, images):
     log.info("Creating a mosaic from '{0:s}' files...".format(image_type))
     moshead = [jj.strip().replace(' ', '').split('=')
