@@ -21,12 +21,12 @@ except NameError:
     FileNotFoundError = IOError
 
 
-def check_for_files(directory, fits_files, type_of_fits_file, force_regrid_boolean):
+def check_for_files(directory, fits_files, type_of_fits_file, regrid_boolean):
     # Remember that if regridded files were produced by MosaicKing, we expect them to be in the output directory
     # Check location for beams made by MosaicKing
 
     dont_exist = False
-    exit_if_not_found_list = [ 'images', 'beams' ]
+    exit_if_not_found_list = [ 'images', 'beams', 'models', 'residuals' ]
     for ff in fits_files:
         try:
             open(directory+'/'+ff)
@@ -109,13 +109,13 @@ def main(argv):
         log.info("Will generate a mosaic from the input images. If you would also like mosaics to be made from the associated models and residuals, please re-run with the '--associated-mosaics' argument enabled.")
 
     log.info('Checking for images and beams')
-    check_for_files(input_dir, images, 'images', args.force_regrid)  # This raises an error and exits if files are not found
-    check_for_files(input_dir, beams, 'beams', args.force_regrid)  # This raises an error and exits if files are not found
+    check_for_files(input_dir, images, 'images', args.regrid)  # This raises an error and exits if files are not found
+    check_for_files(input_dir, beams, 'beams', args.regrid)  # This raises an error and exits if files are not found
 
     if args.associated_mosaics:  # Want to be sure that all of the ingredients are in place before doing any mosaicking
         log.info('Checking for models and residuals')
-        check_for_files(input_dir, models, 'models', args.force_regrid)  # This raises an error and exits if files are not found
-        check_for_files(input_dir, residuals, 'residuals', args.force_regrid)  # This raises an error and exits if files are not found
+        check_for_files(input_dir, models, 'models', args.regrid)  # This raises an error and exits if files are not found
+        check_for_files(input_dir, residuals, 'residuals', args.regrid)  # This raises an error and exits if files are not found
 
     if args.force_regrid:
         log.info('You have asked for all regridded files to be created by this run, even if they are already on disk') 
@@ -125,14 +125,14 @@ def main(argv):
             input_dir, output_dir, mosaic_type, 'pb', images, imagesR, beams, beamsR, outname)
     elif args.regrid:
         log.info('Checking for regridded images and beams')
-        imagesR_dont_exist = check_for_files(output_dir, imagesR, 'regridded images', args.force_regrid)
+        imagesR_dont_exist = check_for_files(output_dir, imagesR, 'regridded images', args.regrid)
         if imagesR_dont_exist:
             log.info('Regridded images are not all in place, so using montage to create them')
             make_mosaic.use_montage_for_regridding(
                 input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname)
         #else:  # redundant
         #    log.info('Regridded images are all in place')
-        beamsR_dont_exist = check_for_files(output_dir, beamsR, 'regridded beams', args.force_regrid)
+        beamsR_dont_exist = check_for_files(output_dir, beamsR, 'regridded beams', args.regrid)
         if beamsR_dont_exist:  
             log.info('Regridded beams are not all in place, so using montage to create them')
             make_mosaic.use_montage_for_regridding(
@@ -142,8 +142,8 @@ def main(argv):
     else:
         log.info(
             'Will use mosaic header {0:s}.hdr and regridded images and beams available on disk'.format(outname))
-        check_for_files(output_dir, imagesR, 'regridded images', args.force_regrid)
-        check_for_files(output_dir, beamsR, 'regridded beams', args.force_regrid)
+        check_for_files(output_dir, imagesR, 'regridded images', args.regrid)
+        check_for_files(output_dir, beamsR, 'regridded beams', args.regrid)
 
     make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'image', outname, imagesR, beamsR, cutoff, images)
 
@@ -158,14 +158,14 @@ def main(argv):
                 input_dir, output_dir, mosaic_type, 'residual', residuals, residualsR, beams, beamsR, outname)
         elif args.regrid:
             log.info('Checking for regridded models and residuals')
-            modelsR_dont_exist = check_for_files(output_dir, modelsR, 'regridded models', args.force_regrid)
+            modelsR_dont_exist = check_for_files(output_dir, modelsR, 'regridded models', args.regrid)
             if modelsR_dont_exist:
                 log.info('Regridded models are not all in place, so using montage to create them')
                 make_mosaic.use_montage_for_regridding(
                     input_dir, output_dir, mosaic_type, 'model', models, modelsR, beams, beamsR, outname)
             else:
                 log.info('Regridded models are all in place')
-            residualsR_dont_exist = check_for_files(output_dir, residualsR, 'regridded residuals', args.force_regrid)
+            residualsR_dont_exist = check_for_files(output_dir, residualsR, 'regridded residuals', args.regrid)
             if residualsR_dont_exist:
                 log.info('Regridded residuals are not all in place, so using montage to create them')
                 make_mosaic.use_montage_for_regridding(
@@ -175,8 +175,8 @@ def main(argv):
         else:
             log.info(
                 'Will use regridded models and residuals available on disk'.format(outname))
-            check_for_files(output_dir, modelsR, 'regridded models', args.force_regrid)
-            check_for_files(output_dir, residualsR, 'regridded residuals', args.force_regrid)
+            check_for_files(output_dir, modelsR, 'regridded models', args.regrid)
+            check_for_files(output_dir, residualsR, 'regridded residuals', args.regrid)
 
         make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'model', outname, modelsR, beamsR, cutoff, models)
         make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'residual', outname, residualsR, beamsR, cutoff, residuals)
