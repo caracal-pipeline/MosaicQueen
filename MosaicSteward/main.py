@@ -31,12 +31,16 @@ def check_for_files(directory, fits_files, type_of_fits_file, regrid_boolean):
         try:
             open(directory+'/'+ff)
         except FileNotFoundError:
+            dont_exist = False
             if type_of_fits_file is in exit_if_not_found_list:
                 log.error('File {0:s} does not exist'.format(directory+'/'+ff))
-                dont_exist = False
                 raise FileNotFoundError
-            else:
-                log.warning('File {0:s} does not exist'.format(directory+'/'+ff))
+            else:  # Intended for the regridded files
+                if regrid_boolean:
+                    log.warning('File {0:s} does not exist'.format(directory+'/'+ff))
+                else:
+                    log.error('File {0:s} does not exist'.format(directory+'/'+ff))
+                    raise FileNotFoundError
 
     log.info('All {0:s} found on disk'.format(type_of_fits_file))
 
