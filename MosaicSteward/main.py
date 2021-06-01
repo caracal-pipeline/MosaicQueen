@@ -41,8 +41,8 @@ def check_for_files(directory, fits_files, type_of_fits_file, regrid_boolean):
                 else:
                     log.error('File {0:s} does not exist'.format(directory+'/'+ff))
                     raise FileNotFoundError
-
-    log.info('All {0:s} found on disk'.format(type_of_fits_file))
+    if dont_exist == False:  # i.e they do exist(!)
+        log.info('All {0:s} found on disk'.format(type_of_fits_file))
 
     return dont_exist
 
