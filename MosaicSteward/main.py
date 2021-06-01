@@ -144,6 +144,7 @@ def main(argv):
         #else:  # redundant
         #    log.info('Regridded beams are all in place')
     else:
+        log.info('User specified neither --force-regrid nor --regrid in the MosaicKing command')
         log.info(
             'Will use mosaic header {0:s}.hdr and regridded images and beams available on disk'.format(outname))
         check_for_files(output_dir, imagesR, 'regridded images', args.regrid)
@@ -177,6 +178,7 @@ def main(argv):
             #else:  # redundant
             #    log.info('Regridded residuals are all in place')
         else:
+            log.info('User specified neither --force-regrid nor --regrid in the MosaicKing command')
             log.info(
                 'Will use regridded models and residuals available on disk'.format(outname))
             check_for_files(output_dir, modelsR, 'regridded models', args.regrid)
