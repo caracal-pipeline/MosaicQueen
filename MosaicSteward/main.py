@@ -34,14 +34,9 @@ def check_for_files(directory, fits_files, type_of_fits_file, force_regrid_boole
             if type_of_fits_file is in exit_if_not_found_list:
                 log.error('File {0:s} does not exist'.format(directory+'/'+ff))
                 dont_exist = False
-            raise FileNotFoundError
-
-    #for bb in beamsR:  # Just call this function twice
-    #    try:
-    #        open(directory+'/'+bb)
-    #    except FileNotFoundError:
-    #        log.error('File {0:s} does not exist'.format(directory+'/'+bb))
-    #        raise FileNotFoundError
+                raise FileNotFoundError
+            else:
+                log.warning('File {0:s} does not exist'.format(directory+'/'+ff))
 
     log.info('All {0:s} found on disk'.format(type_of_fits_file))
 
