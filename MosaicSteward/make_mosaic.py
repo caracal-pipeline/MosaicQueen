@@ -83,7 +83,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
     elif mosaic_type == 'continuum':
         montage_projection = 'mProject'
         montage_add = 'mAdd'
-    
+
     if image_type != 'pb':  # i.e. creating a header for 'image', 'model', or 'residual'
         log.info('Running montage tasks to create mosaic header ...')
         # Create an image list
@@ -92,7 +92,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         Run('mImgtbl -t {0:s}/{1:s}_{2:s}_fields {3:s} {0:s}/{1:s}_{2:s}_fields.tbl'.format(output_dir,outname,image_type,input_dir))
         # Create mosaic header
         Run('mMakeHdr {0:s}/{1:s}_{2:s}_fields.tbl {0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type))
-    
+
         log.info('Running montage tasks to regrid files ...')
         # Reproject the input images
         for cc in images:
@@ -105,7 +105,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         #Run(montage_add + ' -p . {0:s}_{1:s}_fields_regrid.tbl {0:s}_{1:s}.hdr {0:s}.fits'.format(outname,image_type))
 
     else:  # i.e. for image_type == 'pb', to maintain the familiar _beams_regrid filenames
-        log.info('Running montage tasks to regrid beams...')
+        log.info('Running montage tasks to regrid beams ...')
         # Reproject the input beams
         for bb in beams:
             # Assuming that an image_type == 'image' run of this function was called beforehand
@@ -116,7 +116,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         Run('mImgtbl -t {0:s}/{1:s}_beams_regrid {0:s} {0:s}/{1:s}_beams_regrid.tbl'.format(output_dir,outname))
         # Co-add the reprojected beams
         #Run(montage_add + ' -p . {0:s}_beams_regrid.tbl {0:s}.hdr {0:s}_pb.fits'.format(outname))
-    
+
     return 0
 
 
@@ -150,23 +150,24 @@ def gauss(x, *p):  # Define model function to be used to fit to the data in esti
 def estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_filename):
 
     image_tmp = np.nan_to_num(image_regrid_hdu[0].data)
-    mask = image_tmp < 0.0
-    negative_values = image_tmp[mask]
-    positive_values = -1.0*negative_values # Flipping to get the other side of the Gaussian
-    values = np.append( negative_values, positive_values )
+#    mask = image_tmp < 0.0
+#    negative_values = image_tmp[mask]
+#    positive_values = -1.0*negative_values # Flipping to get the other side of the Gaussian
+#    values = np.append( negative_values, positive_values )
 
     if statistic == 'mad':
 
-        log.info('...using the median absolute deviation...')
+        log.info('... using the median absolute deviation ...')
 
-        mad = median_absolute_deviation(values)
-        image_noise_estimate = 1.4826 * mad
-        log.info('Noise estimate = ' + str(image_noise_estimate) + ' Jy/beam') # Assumed units
+#        mad = median_absolute_deviation(values)
+#        mad = median_absolute_deviation(image_tmp[image_tmp<0.0])
+        image_noise_estimate = 1.4826 * median_absolute_deviation(image_tmp[image_tmp<0.0])
+        log.info('... noise estimate = {0:.3e} Jy/beam'.format(image_noise_estimate)) # Assumed units
 
     elif statistic == 'std':
 
-        log.info('...using a Gaussian fit to the negative values...')
-        
+        log.info('... using a Gaussian fit to the negative values ...')
+
         n, bin_edges, patches = plt.hist(values, bins=100, density=True, facecolor='lightblue')
         bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
 
@@ -198,38 +199,39 @@ def estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_file
 
 
 
-def update_norm(norm, slc, regrid_hdu, cutoff):
+def update_norm(norm, slc, beam_regrid_hdu, cutoff, noise):
     """
         update normalization array
     """
 
-    tmp = np.nan_to_num(regrid_hdu[0].data)
-    mask = np.nan_to_num(regrid_hdu[0].data)>cutoff
-    tmp = tmp*tmp
+    tmp = np.nan_to_num(beam_regrid_hdu[0].data)
+    mask = np.nan_to_num(beam_regrid_hdu[0].data)>cutoff
+    tmp = tmp*tmp / noise**2
     norm[slc] += tmp*mask
 
 
-def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff, image_weighting):
+def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff, noise):
     """
         update mosaic array
     """
 
-    weighted_image_tmp = np.nan_to_num(image_regrid_hdu[0].data) * image_weighting
+    weighted_image_tmp = np.nan_to_num(image_regrid_hdu[0].data) / noise**2
     beam_tmp = np.nan_to_num(beam_regrid_hdu[0].data)
     mask = beam_tmp > cutoff
     mos[slc] +=  (weighted_image_tmp * beam_tmp) * mask
-    
+
 @profile
 def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, statistic, sigma_guess, images):
-    
-    log.info("Creating a mosaic from '{0:s}' files...".format(image_type))
-    
+
+    log.info("Creating a mosaic from '{0:s}' files ...".format(image_type))
+
     # Details for the mosaic header
     moshead = [jj.strip().replace(' ', '').split('=')
             for jj in open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type)).readlines()]
     if ['END'] in moshead:
         del(moshead[moshead.index(['END'])])
     moshead = {k: v for (k, v) in moshead}   # Creating a dictionary, where 'k' stands for 'keyword' and 'v' stands for 'value'
+    # Initialise zero-valued mosaic and normalisation arrays
     if mosaic_type == 'spectral':
         mos_array = np.zeros((int(moshead['NAXIS3']), int(
             moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
@@ -238,52 +240,75 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
     if mosaic_type == 'continuum':
         mos_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
         norm_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
-    
+
     # Gathering noise estimates for each of the input images
     all_noise_estimates = []
     for image in imagesR:
-        log.info('Estimating the noise level of {0:s}...'.format(image))
+        log.info('Estimating the noise level of {0:s} ...'.format(image))
         image_regrid_hdu = fits.open(output_dir+'/'+image, mmap=True)  # i.e. open a specific re-gridded image
         check_Gaussian_filename = output_dir + '/' + image.replace('.fits', '_check_Gaussian_fit.png')
-        image_noise_estimate = estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_filename)    
-        all_noise_estimates.append( image_noise_estimate )
-    #log.info(all_noise_estimates) 
+        image_noise_estimate = estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_filename)
+        all_noise_estimates.append(image_noise_estimate)
+    #log.info(all_noise_estimates)
 
     # Determine the relative weighting of each input image
-    all_image_weightings = [ (sigma)**(-2) for sigma in all_noise_estimates ]  
-    sum_of_the_weights = sum(all_image_weightings)
-    relative_image_weightings = [ (1.0/sum_of_the_weights)*weighting for weighting in all_image_weightings ]
+    #all_image_weightings = [(sigma)**(-2) for sigma in all_noise_estimates]
+    #sum_of_the_weights = sum(all_image_weightings)
+    #relative_image_weightings = [(1.0/sum_of_the_weights)*weighting for weighting in all_image_weightings]
     #log.info(relative_image_weightings)
 
-    # The mosaicking part
+    # The mosaicking part: iterate over input regridded arrays and add to mosaic and normalisation arrays at each step
     weighting_index = 0
-    for ii, bb in zip(imagesR, beamsR):
+
+    for ii, bb, ss in zip(imagesR, beamsR, all_noise_estimates):
         log.info('Adding {0:s} to the mosaic ...'.format(ii))
         image_regrid_hdu = fits.open(output_dir+'/'+ii, mmap=True)  # i.e. open a specific re-gridded image
         head = image_regrid_hdu[0].header
         beam_regrid_hdu = fits.open(output_dir+'/'+bb, mmap=True)  # i.e. open a specific re-gridded beam
 
+        # Calculate the location of this regridded input array within the mosaic array
         y1 = int(float(moshead['CRPIX2']) - head['CRPIX2'])
         y2 = int(float(moshead['CRPIX2']) - head['CRPIX2'] + head['NAXIS2'])
         x1 = int(float(moshead['CRPIX1']) - head['CRPIX1'])
         x2 = int(float(moshead['CRPIX1']) - head['CRPIX1'] + head['NAXIS1'])
-
         if mosaic_type == 'spectral':
-            slc = slice(None), slice(y1,y2), slice(x1,x2) 
-
+            slc = slice(None), slice(y1,y2), slice(x1,x2)
         elif mosaic_type == 'continuum':
             slc = slice(y1,y2), slice(x1,x2)
-        
-        update_norm(norm_array, slc, beam_regrid_hdu, cutoff)
-        update_mos( mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff, relative_image_weightings[weighting_index] )
+
+        # Add the regridded input array with appropriate weights
+        update_norm(norm_array, slc, beam_regrid_hdu, cutoff, ss)
+        update_mos(mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff, ss)
         weighting_index = weighting_index + 1
         image_regrid_hdu.close()
         beam_regrid_hdu.close()
 
+    # Fixing mosaic header (add missing info)
+    single_keys = 'bunit specsys3 restfreq restfrq'.split() # header keys which should be identical in all input cubes
+    multi_keys  = 'bmaj bmin bpa'.split()                   # header keys which can vary from one input cube to another (we take the median)
+    all_keys    = single_keys + multi_keys
+    for kk in all_keys:
+        if kk not in moshead:
+            keyvals = []
+            for ii in images:
+                with fits.open('{0}/{1}'.format(input_dir,ii)) as org_hdu:
+                    org_head = org_hdu[0].header
+                if kk in org_head:
+                    keyvals.append(org_head[kk])
+            if len(keyvals):
+                if kk in single_keys:
+                    if np.unique(np.array(keyvals)).shape[0] > 1:
+                        log.info('Inconsistent {0} values in input cubes. Will use {0} of the first input cube.'.format(kk))
+                    moskey = keyvals[0]
+                elif kk in multi_keys:
+                    moskey = np.median(np.array(keyvals))
+                log.info('Setting {0} = {1} in mosaic FITS header'.format(kk, moskey))
+                moshead[kk] = moskey
+
     # Tidying up and writing
     moshead = make_mosaic_header(mosaic_type, moshead)
     if mosaic_type == 'spectral':
-        f = fits.open(input_dir+'/'+images[0]) 
+        f = fits.open(input_dir+'/'+images[0])
         zhead = f[0].header
         moshead['ctype3'] = zhead['ctype3']
         f.close()
@@ -299,7 +324,7 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
         log.info('The following mosaic FITS were written to disk: {0:s}_{1:s}.fits {0:s}_noise.fits {0:s}_weights.fits'.format(outname,image_type))
     else:  # i.e. when making a mosaic of the 'model' or 'residual' .fits files
         log.info('The following mosaic FITS was written to disk: {0:s}_{1:s}.fits'.format(outname,image_type))
-    
+
     log.info('Mosaicking completed')
 
-    return 
+    return
