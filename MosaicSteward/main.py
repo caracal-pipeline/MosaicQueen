@@ -53,10 +53,10 @@ def main(argv):
     parser.add_argument("-c", "--cutoff", type=float, default=0.1,
                         help="The cutoff in the primary beam to use (assuming a Gaussian at the moment)."
                               "E.g. The default of 0.1 means going down to the 10 percent level for each pointing.")
-    parser.add_argument("-s", "--statistic", choices= ["mad", "std"], required = True,
+    parser.add_argument("-s", "--statistic", choices= ["mad", "std"], required = False, default = "mad",
                         help="State 'mad' (median absolute deviation) or 'std' (standard deviation) as the statistic to be used for " 
-                             "estimating the noise level in the input images. This will be derived using the negative pixel-values " 
-                             "(and their reflection about zero).")
+                             "estimating the noise level in the input images. This will be derived using the negative pixel-values. " 
+                             "Default is mad.")
     parser.add_argument("-g", "--guess-std", type=float, default=0.02,
                         help="An initial guess of the noise level in the input images, if user has set '--statistic' to 'std'."
                              "(This is to aid a Gaussian fit to the negative pixel-values.) The default of 0.02 assumes that "
