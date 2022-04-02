@@ -2,7 +2,7 @@
 
 # ------------------------------------------------------------------------------------------------------
 # Author of package: Sarah White (sarahwhite.astro@gmail.com) and Sphe Makhathini (sphemakh@gmail.com)
-# Based on a mosaicking script by Paolo Serra (paolo80serra@gmail.com)
+# Based on a mosaicking script by Paolo Serra (paolo.serra@inaf.it)
 # ------------------------------------------------------------------------------------------------------
 
 from MosaicSteward import make_mosaic
@@ -53,8 +53,8 @@ def main(argv):
     parser.add_argument("-c", "--cutoff", type=float, default=0.1,
                         help="The cutoff in the primary beam to use (assuming a Gaussian at the moment)."
                               "E.g. The default of 0.1 means going down to the 10 percent level for each pointing.")
-    parser.add_argument("-s", "--statistic", choices= ["mad", "std"], required = False, default = "mad",
-                        help="State 'mad' (median absolute deviation) or 'std' (standard deviation) as the statistic to be used for " 
+    parser.add_argument("-s", "--statistic", choices= ["mad", "fit"], required = False, default = "mad",
+                        help="State 'mad' (median absolute deviation) or 'fit' (Gaussian fit) as the statistic to be used for " 
                              "estimating the noise level in the input images. This will be derived using the negative pixel-values. " 
                              "Default is mad.")
     parser.add_argument("-g", "--guess-std", type=float, default=0.02,

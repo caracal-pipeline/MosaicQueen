@@ -2,7 +2,7 @@
 
 # ------------------------------------------------------------------------------------------------------
 # Author of package: Sarah White (sarahwhite.astro@gmail.com) and Sphe Makhathini (sphemakh@gmail.com)
-# Based on a mosaicking script by Paolo Serra (paolo80serra@gmail.com)
+# Based on a mosaicking script by Paolo Serra (paolo.serra@inaf.it)
 # ------------------------------------------------------------------------------------------------------
 
 from astropy.io import fits
@@ -15,7 +15,6 @@ import MosaicSteward
 import argparse
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-from scipy.stats import median_absolute_deviation
 from memory_profiler import profile
 
 log = MosaicSteward.log
@@ -157,14 +156,12 @@ def estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_file
 
     if statistic == 'mad':
 
-        log.info('... using the median absolute deviation ...')
+        log.info('... using the median absolute deviation of all negative pixels (assuming median = 0) ...')
 
-#        mad = median_absolute_deviation(values)
-#        mad = median_absolute_deviation(image_tmp[image_tmp<0.0])
-        image_noise_estimate = 1.4826 * median_absolute_deviation(image_tmp[image_tmp<0.0])
+        image_noise_estimate = 1.4826 * np.median(np.abs(image_tmp[(image_tmp<0.0)*(~np.isnan(image_tmp))]))
         log.info('... noise estimate = {0:.3e} Jy/beam'.format(image_noise_estimate)) # Assumed units
 
-    elif statistic == 'std':
+    elif statistic == 'fit':
 
         log.info('... using a Gaussian fit to the negative values ...')
 
@@ -196,7 +193,6 @@ def estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_file
         image_noise_estimate = coeff[2]
 
     return image_noise_estimate   # This returns a single value
-
 
 
 def update_norm(norm, slc, beam_regrid_hdu, cutoff, noise):
