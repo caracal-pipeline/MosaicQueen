@@ -48,14 +48,14 @@ def main(argv):
                               "Also regrid the 'model' and 'residual' files, if '--associated-mosaics' is enabled.")
     parser.add_argument("-f", "--force-regrid", action="store_true",
                         help="If the user wants newly-regridded files, this '--force-regrid' argument should be enabled."
-                              "(If '--regrid' is enabled instead, the package will first check whether regridded files already exist." 
+                              "(If '--regrid' is enabled instead, the package will first check whether regridded files already exist."
                               "If they are found, regridding will not proceed because this is a time-consuming step.)")
     parser.add_argument("-c", "--cutoff", type=float, default=0.1,
                         help="The cutoff in the primary beam to use (assuming a Gaussian at the moment)."
                               "E.g. The default of 0.1 means going down to the 10 percent level for each pointing.")
-    parser.add_argument("-s", "--statistic", choices= ["mad", "fit"], required = False, default = "mad",
-                        help="State 'mad' (median absolute deviation) or 'fit' (Gaussian fit) as the statistic to be used for " 
-                             "estimating the noise level in the input images. This will be derived using the negative pixel-values. " 
+    parser.add_argument("-s", "--statistic", choices= ["mad", "rms", "fit"], required = False, default = "mad",
+                        help="State 'mad' (median absolute deviation), 'rms' (root mean square) or 'fit' (Gaussian fit) as the statistic to be "
+                             "used for estimating the noise level in the input images. This will be derived using the negative pixel-values. "
                              "Default is mad.")
     parser.add_argument("-g", "--guess-std", type=float, default=0.02,
                         help="An initial guess of the noise level in the input images, if user has set '--statistic' to 'std'."

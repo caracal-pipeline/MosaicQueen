@@ -148,22 +148,27 @@ def gauss(x, *p):  # Define model function to be used to fit to the data in esti
 
 def estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_filename):
 
-    image_tmp = np.nan_to_num(image_regrid_hdu[0].data)
-#    mask = image_tmp < 0.0
-#    negative_values = image_tmp[mask]
-#    positive_values = -1.0*negative_values # Flipping to get the other side of the Gaussian
-#    values = np.append( negative_values, positive_values )
-
     if statistic == 'mad':
-
         log.info('... using the median absolute deviation of all negative pixels (assuming median = 0) ...')
+        image_tmp = image_regrid_hdu[0].data
+        image_noise_estimate = 1.4826 * np.median(np.abs(image_tmp[(image_tmp < 0) * (~np.isnan(image_tmp))]))
+        log.info('... noise estimate = {0:.3e} Jy/beam'.format(image_noise_estimate)) # Assumed units
 
-        image_noise_estimate = 1.4826 * np.median(np.abs(image_tmp[(image_tmp<0.0)*(~np.isnan(image_tmp))]))
+    if statistic == 'rms':
+        log.info('... using the rms of all negative pixels ...')
+        image_tmp = image_regrid_hdu[0].data
+        image_noise_estimate = np.sqrt(np.nanmean(image_tmp[image_tmp < 0]**2))
         log.info('... noise estimate = {0:.3e} Jy/beam'.format(image_noise_estimate)) # Assumed units
 
     elif statistic == 'fit':
 
         log.info('... using a Gaussian fit to the negative values ...')
+
+        image_tmp = np.nan_to_num(image_regrid_hdu[0].data)
+        mask = image_tmp < 0.0
+        negative_values = image_tmp[mask]
+        positive_values = -1.0*negative_values # Flipping to get the other side of the Gaussian
+        values = np.append( negative_values, positive_values )
 
         n, bin_edges, patches = plt.hist(values, bins=100, density=True, facecolor='lightblue')
         bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
@@ -187,9 +192,8 @@ def estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_file
         plt.close() # Close figure, so that lines don't remain for subsequent calls
 
         # Get the fitting parameters, i.e. the mean and standard deviation:
-        log.info('Fitted mean = ' + str(coeff[1]) + ' Jy/beam') # Assumed units
-        log.info('Fitted standard deviation = ' + str(coeff[2]) + ' Jy/beam') # Assumed units
-        log.info('See ' + check_Gaussian_filename)
+        log.info('... noise estimate = {0:.3e} Jy/beam'.format(coeff[2])) # Assumed units
+        log.info('    (see ' + check_Gaussian_filename + ')')
         image_noise_estimate = coeff[2]
 
     return image_noise_estimate   # This returns a single value
