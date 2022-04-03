@@ -210,15 +210,19 @@ def update_norm(norm, slc, beam_regrid_hdu, cutoff, noise):
     norm[slc] += tmp*mask
 
 
-def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff, noise):
+def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff, noise, finite):
     """
         update mosaic array
     """
 
-    weighted_image_tmp = np.nan_to_num(image_regrid_hdu[0].data) / noise**2
-    beam_tmp = np.nan_to_num(beam_regrid_hdu[0].data)
+    weighted_image_tmp = image_regrid_hdu[0].data
+    beam_tmp = beam_regrid_hdu[0].data
     mask = beam_tmp > cutoff
-    mos[slc] +=  (weighted_image_tmp * beam_tmp) * mask
+    # set finite = True only for pixels above the beam cutoff and !=NaN in cube and beam
+    # (their value is temporarily set to zero in mos and norm arrays, then later set to NaN)
+    finite[slc] += mask * ~np.isnan(beam_tmp) * ~np.isnan(weighted_image_tmp)
+    mos[slc] +=  np.nan_to_num(weighted_image_tmp) * np.nan_to_num(beam_tmp) * mask / noise**2
+
 
 @profile
 def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, statistic, sigma_guess, images):
@@ -237,9 +241,12 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
             moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
         norm_array = np.zeros((int(moshead['NAXIS3']), int(
             moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
+        finite_array = np.zeros((int(moshead['NAXIS3']), int(
+            moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='bool')
     if mosaic_type == 'continuum':
         mos_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
         norm_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
+        finite_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='bool')
 
     # Gathering noise estimates for each of the input images
     all_noise_estimates = []
@@ -278,10 +285,13 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
 
         # Add the regridded input array with appropriate weights
         update_norm(norm_array, slc, beam_regrid_hdu, cutoff, ss)
-        update_mos(mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff, ss)
+        update_mos(mos_array, slc, image_regrid_hdu, beam_regrid_hdu , cutoff, ss, finite_array)
         weighting_index = weighting_index + 1
         image_regrid_hdu.close()
         beam_regrid_hdu.close()
+
+    mos_array[~finite_array] = np.nan
+    norm_array[~finite_array] = np.nan
 
     # Fixing mosaic header (add missing keys that exist in the original input cubes but not yet in the mosaic cube)
     # Header keys which should be identical in all input cubes (if not, we take the first one)
