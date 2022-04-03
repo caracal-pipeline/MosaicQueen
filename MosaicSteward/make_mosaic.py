@@ -283,9 +283,29 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
         image_regrid_hdu.close()
         beam_regrid_hdu.close()
 
-    # Fixing mosaic header (add missing info)
-    single_keys = 'bunit specsys3 restfreq restfrq'.split() # header keys which should be identical in all input cubes
-    multi_keys  = 'bmaj bmin bpa'.split()                   # header keys which can vary from one input cube to another (we take the median)
+    # Fixing mosaic header (add missing keys that exist in the original input cubes but not yet in the mosaic cube)
+    # Header keys which should be identical in all input cubes (if not, we take the first one)
+    single_keys = [
+                   'bunit',
+                   'specsys',
+                   'specsys3',
+                   'restfreq',
+                   'restfrq',
+                   'velref',
+                   'epoch',
+                   'equinox',
+                   'altrval',
+                   'altrpix',
+                   'telescop',
+                   'observer',
+                   'obsgeo-x',
+                   'obsgeo-y',
+                   'obsgeo-z',
+                   'cellscal',
+                   ]
+
+    # header keys which can vary from one input cube to another (we take the median)
+    multi_keys  = 'bmaj bmin bpa'.split()
     all_keys    = single_keys + multi_keys
     for kk in all_keys:
         if kk not in moshead:
