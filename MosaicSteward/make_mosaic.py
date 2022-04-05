@@ -207,6 +207,7 @@ def update_norm(norm, slc, beam_regrid_hdu, cutoff, noise):
     tmp = np.nan_to_num(beam_regrid_hdu[0].data)
     mask = np.nan_to_num(beam_regrid_hdu[0].data)>cutoff
     tmp = tmp*tmp / noise**2
+    # See update_mos below for an explanation of the masking
     norm[slc] += tmp*mask
 
 
@@ -218,9 +219,10 @@ def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff, noise, finit
     weighted_image_tmp = image_regrid_hdu[0].data
     beam_tmp = beam_regrid_hdu[0].data
     mask = beam_tmp > cutoff
-    # set finite = True only for pixels above the beam cutoff and !=NaN in cube and beam
-    # (their value is temporarily set to zero in mos and norm arrays, then later set to NaN)
+    # Set finite = True only for pixels 1) above the beam cutoff and 2) !=NaN in both cube and beam
     finite[slc] += mask * ~np.isnan(beam_tmp) * ~np.isnan(weighted_image_tmp)
+    # Pixels not meeting the above requirements 1) and 2) for this cube and beam are temporarily
+    # Set to zero before being added to mos and norm array
     mos[slc] +=  np.nan_to_num(weighted_image_tmp) * np.nan_to_num(beam_tmp) * mask / noise**2
 
 
@@ -290,6 +292,7 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
         image_regrid_hdu.close()
         beam_regrid_hdu.close()
 
+    # Pixels whose value is False in the finite array are blanked in the final mos and norm arrays
     mos_array[~finite_array] = np.nan
     norm_array[~finite_array] = np.nan
 
