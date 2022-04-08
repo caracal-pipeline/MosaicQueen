@@ -11,16 +11,16 @@ requirements = [
 "memory-profiler",
 ]
 
-PACKAGE_NAME = 'MosaicSteward'
-__version__ = '0.0.4'
+PACKAGE_NAME = 'mosiac-queen'
+__version__ = '1.0.0'
 
 setup(name = PACKAGE_NAME,
     version = __version__,
     description = "A package with mosaicking commands from montage",
-    author = "Sarah White",
+    author = "Sarah White and CaraCal pipeline tean",
     author_email = "sarahwhite.astro@gmail.com",
-    url = "https://github.com/svw26",
-    packages=["MosaicSteward"],
+    url = "https://github.com/caracal-pipeline/MosaicQueen",
+    packages=["mosaicQueen"],
     install_requires = requirements,
     include_package_data = True,
     license=["GNU GPL v2"],
