@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 
 requirements = [
 "numpy",
@@ -20,7 +20,7 @@ setup(name = PACKAGE_NAME,
     author = "Sarah White and CaraCal pipeline tean",
     author_email = "sarahwhite.astro@gmail.com",
     url = "https://github.com/caracal-pipeline/MosaicQueen",
-    packages=["mosaicQueen"],
+    packages = find_packages(),
     install_requires = requirements,
     include_package_data = True,
     license=["GNU GPL v2"],

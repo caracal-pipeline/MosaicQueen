@@ -15,7 +15,7 @@ import mosaicQueen
 import argparse
 from memory_profiler import profile
 
-log = osaicQueen.log
+log = mosaicQueen.log
 
 # So that error handling is compatible with Python 2 as well as Python 3
 try:

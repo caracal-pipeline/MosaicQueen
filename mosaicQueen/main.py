@@ -12,7 +12,7 @@ import os
 import sys
 import glob
 
-log = MosaicQueen.log
+log = mosaicQueen.log
 
 # So that error handling is compatible with Python 2 as well as Python 3
 try:
