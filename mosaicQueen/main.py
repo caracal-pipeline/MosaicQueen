@@ -116,6 +116,7 @@ def main(argv):
         log.info('Checking for models and residuals')
         make_mosaic.final_check_for_files(input_dir, models, residuals)  # Function raises an error and should exit if files are not found
 
+    log.info("Mosaicking 'image' files")
     if args.force_regrid:
         log.info('You have asked for all regridded files to be created by this run, even if they are already on disk')
         make_mosaic.use_montage_for_regridding(
@@ -144,11 +145,12 @@ def main(argv):
         make_mosaic.final_check_for_files(output_dir, imagesR, beamsR)  # This function raises an error and exits if files are not found
 
 
-    make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'image', outname, imagesR, beamsR, cutoff, statistic, sigma_guess, images)
+    noises = make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'image', outname, imagesR, beamsR, cutoff, statistic, sigma_guess, images)
 
 
     if args.associated_mosaics:  # Code is more readable by keeping these mosaics separate
 
+        log.info("Mosaicking 'model' and 'residual' files")
         if args.force_regrid:
             log.info('You have asked for all regridded files to be created by this run, even if they are already on disk')
             make_mosaic.use_montage_for_regridding(
@@ -176,8 +178,8 @@ def main(argv):
                 'Will use regridded models and residuals available on disk'.format(outname))
             make_mosaic.final_check_for_files(output_dir, modelsR, residualsR)
 
-        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'model', outname, modelsR, beamsR, cutoff, statistic, sigma_guess, models)
-        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'residual', outname, residualsR, beamsR, cutoff, statistic, sigma_guess, residuals)
+        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'model'   , outname, modelsR   , beamsR, cutoff, statistic, sigma_guess, models   , all_noise_estimates=noises)
+        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'residual', outname, residualsR, beamsR, cutoff, statistic, sigma_guess, residuals, all_noise_estimates=noises)
 
     # Move the log file to the output directory
     os.system('mv log-make_mosaic.txt '+output_dir+'/')

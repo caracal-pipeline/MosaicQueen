@@ -227,7 +227,7 @@ def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff, noise, finit
 
 
 @profile
-def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, statistic, sigma_guess, images):
+def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, statistic, sigma_guess, images, all_noise_estimates=[]):
 
     log.info("Creating a mosaic from '{0:s}' files ...".format(image_type))
 
@@ -251,14 +251,17 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
         finite_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='bool')
 
     # Gathering noise estimates for each of the input images
-    all_noise_estimates = []
-    for image in imagesR:
-        log.info('Estimating the noise level of {0:s} ...'.format(image))
-        image_regrid_hdu = fits.open(output_dir+'/'+image, mmap=True)  # i.e. open a specific re-gridded image
-        check_Gaussian_filename = output_dir + '/' + image.replace('.fits', '_check_Gaussian_fit.png')
-        image_noise_estimate = estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_filename)
-        all_noise_estimates.append(image_noise_estimate)
-    #log.info(all_noise_estimates)
+    log.info("Will use 1/noise**2 weights")
+    if image_type == 'image':
+        for image in imagesR:
+            log.info('Estimating the noise level of {0:s} ...'.format(image))
+            image_regrid_hdu = fits.open(output_dir+'/'+image, mmap=True)  # i.e. open a specific re-gridded image
+            check_Gaussian_filename = output_dir + '/' + image.replace('.fits', '_check_Gaussian_fit.png')
+            image_noise_estimate = estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_filename)
+            all_noise_estimates.append(image_noise_estimate)
+    log.info("Summary of noise levels estimated from the 'image' files:")
+    for ee in all_noise_estimates:
+        log.info('    {0:.3e} Jy/beam'.format(ee)) # Assumed units
 
     # Determine the relative weighting of each input image
     #all_image_weightings = [(sigma)**(-2) for sigma in all_noise_estimates]
@@ -358,6 +361,6 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
     else:  # i.e. when making a mosaic of the 'model' or 'residual' .fits files
         log.info('The following mosaic FITS was written to disk: {0:s}_{1:s}.fits'.format(outname,image_type))
 
-    log.info('Mosaicking completed')
+    log.info("Mosaicking of '{}' files completed".format(image_type))
 
-    return
+    return all_noise_estimates
