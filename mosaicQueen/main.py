@@ -53,10 +53,12 @@ def main(argv):
     parser.add_argument("-c", "--cutoff", type=float, default=0.1,
                         help="The cutoff in the primary beam to use (assuming a Gaussian at the moment)."
                               "E.g. The default of 0.1 means going down to the 10 percent level for each pointing.")
+    parser.add_argument("-u", "--unity-weights", action="store_true",
+                        help="Build the mosaic using weight=1 instead of weight=1/noise**2 for the input images.")
     parser.add_argument("-s", "--statistic", choices= ["mad", "rms", "fit"], required = False, default = "mad",
                         help="State 'mad' (median absolute deviation), 'rms' (root mean square) or 'fit' (Gaussian fit) as the statistic to be "
                              "used for estimating the noise level in the input images. This will be derived using the negative pixel-values. "
-                             "Default is mad.")
+                             "The noise levels set the weights=1/noise**2 used when mosaicking. Not used if the '-u' option is enabled. Default is mad.")
     parser.add_argument("-g", "--guess-std", type=float, default=0.02,
                         help="An initial guess of the noise level in the input images, if user has set '--statistic' to 'std'."
                              "(This is to aid a Gaussian fit to the negative pixel-values.) The default of 0.02 assumes that "
@@ -74,6 +76,7 @@ def main(argv):
     mosaic_type = args.mosaic_type
     cutoff = args.cutoff
     statistic = args.statistic
+    unity_weights = args.unity_weights
     sigma_guess = args.guess_std
     outname = args.name
     output_dir = args.output
@@ -145,7 +148,7 @@ def main(argv):
         make_mosaic.final_check_for_files(output_dir, imagesR, beamsR)  # This function raises an error and exits if files are not found
 
 
-    noises = make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'image', outname, imagesR, beamsR, cutoff, statistic, sigma_guess, images)
+    noises = make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'image', outname, imagesR, beamsR, cutoff, unity_weights, statistic, sigma_guess, images)
 
 
     if args.associated_mosaics:  # Code is more readable by keeping these mosaics separate
@@ -178,8 +181,8 @@ def main(argv):
                 'Will use regridded models and residuals available on disk'.format(outname))
             make_mosaic.final_check_for_files(output_dir, modelsR, residualsR)
 
-        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'model'   , outname, modelsR   , beamsR, cutoff, statistic, sigma_guess, models   , all_noise_estimates=noises)
-        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'residual', outname, residualsR, beamsR, cutoff, statistic, sigma_guess, residuals, all_noise_estimates=noises)
+        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'model'   , outname, modelsR   , beamsR, cutoff, unity_weights, statistic, sigma_guess, models   , all_noise_estimates=noises)
+        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'residual', outname, residualsR, beamsR, cutoff, unity_weights, statistic, sigma_guess, residuals, all_noise_estimates=noises)
 
     # Move the log file to the output directory
     os.system('mv log-make_mosaic.txt '+output_dir+'/')
