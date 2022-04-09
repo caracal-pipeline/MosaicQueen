@@ -1,3 +1,4 @@
-### version 0.0.3
+### version 1.0.0
 
-- Renaming the package from montage_mosaic to MosaicSteward 
+- First release after moving from MosaicSteward
+

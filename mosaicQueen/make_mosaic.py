@@ -11,13 +11,13 @@ from sys import argv
 import sys
 import os
 import numpy as np
-import MosaicSteward
+import mosaicQueen
 import argparse
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from memory_profiler import profile
 
-log = MosaicSteward.log
+log = mosaicQueen.log
 
 # So that error handling is compatible with Python 2 as well as Python 3
 try:
