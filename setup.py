@@ -11,7 +11,7 @@ requirements = [
 "memory-profiler",
 ]
 
-PACKAGE_NAME = 'mosiac-queen'
+PACKAGE_NAME = 'mosaic-queen'
 __version__ = '1.0.0'
 
 setup(name = PACKAGE_NAME,
