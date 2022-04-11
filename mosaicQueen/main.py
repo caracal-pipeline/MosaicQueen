@@ -2,17 +2,17 @@
 
 # ------------------------------------------------------------------------------------------------------
 # Author of package: Sarah White (sarahwhite.astro@gmail.com) and Sphe Makhathini (sphemakh@gmail.com)
-# Based on a mosaicking script by Paolo Serra (paolo80serra@gmail.com)
+# Based on a mosaicking script by Paolo Serra (paolo.serra@inaf.it)
 # ------------------------------------------------------------------------------------------------------
 
-from MosaicSteward import make_mosaic
+from mosaicQueen import make_mosaic
 from argparse import ArgumentParser
-import MosaicSteward
+import mosaicQueen
 import os
 import sys
 import glob
 
-log = MosaicSteward.log
+log = mosaicQueen.log
 
 # So that error handling is compatible with Python 2 as well as Python 3
 try:
@@ -21,28 +21,13 @@ except NameError:
     FileNotFoundError = IOError
 
 
-def check_for_files(directory, fits_files, type_of_fits_file, regrid_boolean):
-    # Remember that if regridded files were produced by MosaicKing, we expect them to be in the output directory
-    # Check location for beams made by MosaicKing
-
     dont_exist = False
-    exit_if_not_found_list = [ 'images', 'beams', 'models', 'residuals' ]
-    for ff in fits_files:
+    for tt in images:
         try:
             open(directory+'/'+ff)
         except FileNotFoundError:
+            log.error('File {0:s} does not exist'.format(input_dir+'/'+tt))
             dont_exist = True
-            if type_of_fits_file in exit_if_not_found_list:
-                log.error('File {0:s} does not exist'.format(directory+'/'+ff))
-                raise FileNotFoundError
-            else:  # Intended for the regridded files
-                if regrid_boolean:
-                    log.warning('File {0:s} does not exist'.format(directory+'/'+ff))
-                else:
-                    log.error('File {0:s} does not exist'.format(directory+'/'+ff))
-                    raise FileNotFoundError
-    if dont_exist == False:  # i.e they do exist(!)
-        log.info('All {0:s} found on disk'.format(type_of_fits_file))
 
     return dont_exist
 
@@ -62,15 +47,26 @@ def main(argv):
                               "Also regrid the 'model' and 'residual' files, if '--associated-mosaics' is enabled.")
     parser.add_argument("-f", "--force-regrid", action="store_true",
                         help="If the user wants newly-regridded files, this '--force-regrid' argument should be enabled."
-                              "(If '--regrid' is enabled instead, the package will first check whether regridded files already exist." 
+                              "(If '--regrid' is enabled instead, the package will first check whether regridded files already exist."
                               "If they are found, regridding will not proceed because this is a time-consuming step.)")
     parser.add_argument("-c", "--cutoff", type=float, default=0.1,
                         help="The cutoff in the primary beam to use (assuming a Gaussian at the moment)."
                               "E.g. The default of 0.1 means going down to the 10 percent level for each pointing.")
+    parser.add_argument("-u", "--unity-weights", action="store_true",
+                        help="Build the mosaic using weight=1 instead of weight=1/noise**2 for the input images.")
+    parser.add_argument("-s", "--statistic", choices= ["mad", "rms", "fit"], required = False, default = "mad",
+                        help="State 'mad' (median absolute deviation), 'rms' (root mean square) or 'fit' (Gaussian fit) as the statistic to be "
+                             "used for estimating the noise level in the input images. This will be derived using the negative pixel-values. "
+                             "The noise levels set the weights=1/noise**2 used when mosaicking. Not used if the '-u' option is enabled. Default is mad.")
+    parser.add_argument("-g", "--guess-std", type=float, default=0.02,
+                        help="An initial guess of the noise level in the input images, if user has set '--statistic' to 'std'."
+                             "(This is to aid a Gaussian fit to the negative pixel-values.) The default of 0.02 assumes that "
+                             "the pixel values are in units of Jy/beam, so a std of ~ 20 mJy/beam).")
     parser.add_argument("-n", "--name", default="mymosaic",
                         help="The prefix to be used for output files.")
     parser.add_argument("-t", "--target-images", action="append",
-                        help="The filenames of each target/pointing image to be mosaicked. A suffix of 'image.fits' is expected, and this is replaced by 'pb.fits' in order to locate the corresponding beams (which are also required as input).")
+                        help="The filenames of each target/pointing image to be mosaicked. A suffix of 'image.fits' is expected, "
+                             "and this is replaced by 'pb.fits' in order to locate the corresponding beams (which are also required as input).")
     parser.add_argument("-o", "--output",
                         help="The directory for all output files.")
 
@@ -78,11 +74,14 @@ def main(argv):
     input_dir = args.input
     mosaic_type = args.mosaic_type
     cutoff = args.cutoff
+    statistic = args.statistic
+    unity_weights = args.unity_weights
+    sigma_guess = args.guess_std
     outname = args.name
     output_dir = args.output
     os.makedirs(output_dir, exist_ok=True)
 
-    if args.target_images: 
+    if args.target_images:
         if len(args.target_images) == 1:
             images = glob.glob(os.path.join(args.input, args.target_images[0]))
             images = [os.path.basename(item) for item in images]
@@ -121,8 +120,9 @@ def main(argv):
         check_for_files(input_dir, models, 'models', args.regrid)  # This raises an error and exits if files are not found
         check_for_files(input_dir, residuals, 'residuals', args.regrid)  # This raises an error and exits if files are not found
 
+    log.info("Mosaicking 'image' files")
     if args.force_regrid:
-        log.info('You have asked for all regridded files to be created by this run, even if they are already on disk') 
+        log.info('You have asked for all regridded files to be created by this run, even if they are already on disk')
         make_mosaic.use_montage_for_regridding(
             input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname)
         make_mosaic.use_montage_for_regridding(
@@ -134,10 +134,10 @@ def main(argv):
             log.info('Regridded images are not all in place, so using montage to create them')
             make_mosaic.use_montage_for_regridding(
                 input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname)
-        #else:  # redundant
-        #    log.info('Regridded images are all in place')
-        beamsR_dont_exist = check_for_files(output_dir, beamsR, 'regridded beams', args.regrid)
-        if beamsR_dont_exist:  
+        else:
+            log.info('Regridded images are all in place')
+        beamsR_dont_exist = check_for_files(output_dir, beamsR)
+        if beamsR_dont_exist:
             log.info('Regridded beams are not all in place, so using montage to create them')
             make_mosaic.use_montage_for_regridding(
                 input_dir, output_dir, mosaic_type, 'pb', images, imagesR, beams, beamsR, outname)
@@ -147,14 +147,15 @@ def main(argv):
         log.info('User specified neither --force-regrid nor --regrid in the MosaicKing command')
         log.info(
             'Will use mosaic header {0:s}.hdr and regridded images and beams available on disk'.format(outname))
-        check_for_files(output_dir, imagesR, 'regridded images', args.regrid)
-        check_for_files(output_dir, beamsR, 'regridded beams', args.regrid)
+        make_mosaic.final_check_for_files(output_dir, imagesR, beamsR)  # This function raises an error and exits if files are not found
 
-    make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'image', outname, imagesR, beamsR, cutoff, images)
+
+    noises = make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'image', outname, imagesR, beamsR, cutoff, unity_weights, statistic, sigma_guess, images)
 
 
     if args.associated_mosaics:  # Code is more readable by keeping these mosaics separate
 
+        log.info("Mosaicking 'model' and 'residual' files")
         if args.force_regrid:
             log.info('You have asked for all regridded files to be created by this run, even if they are already on disk')
             make_mosaic.use_montage_for_regridding(
@@ -184,8 +185,8 @@ def main(argv):
             check_for_files(output_dir, modelsR, 'regridded models', args.regrid)
             check_for_files(output_dir, residualsR, 'regridded residuals', args.regrid)
 
-        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'model', outname, modelsR, beamsR, cutoff, models)
-        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'residual', outname, residualsR, beamsR, cutoff, residuals)
+        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'model'   , outname, modelsR   , beamsR, cutoff, unity_weights, statistic, sigma_guess, models   , all_noise_estimates=noises)
+        make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'residual', outname, residualsR, beamsR, cutoff, unity_weights, statistic, sigma_guess, residuals, all_noise_estimates=noises)
 
     # Move the log file to the output directory
     os.system('mv log-make_mosaic.txt '+output_dir+'/')

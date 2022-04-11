@@ -3,6 +3,6 @@
 import os
 import sys
 
-from MosaicSteward import main
+from mosaicQueen import main
 
 main.main(sys.argv[1:])
