@@ -224,8 +224,19 @@ def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff, noise, finit
     # Set to zero before being added to mos and norm array
     mos[slc] +=  np.nan_to_num(weighted_image_tmp) * np.nan_to_num(beam_tmp) * mask / noise**2
 
+def find_lowest_precision(input_dir, images):
+    """
+        find lowest floating-point precision of the input, and return so that it can be used to set the precision of the output
+    """
+    bitpix_list = []
+    for image in images:
+        with fits.open(os.path.join(input_dir,image)) as hdul:
+            bitpix_list.append( abs(int(hdul[0]._bitpix)) )
+    bitpix = min(bitpix_list)
 
-@profile
+    return bitpix
+
+#@profile
 def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, uwei, statistic, sigma_guess, images, all_noise_estimates=[]):
 
     log.info("Creating a mosaic from '{0:s}' files ...".format(image_type))
@@ -236,14 +247,20 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
     if ['END'] in moshead:
         del(moshead[moshead.index(['END'])])
     moshead = {k: v for (k, v) in moshead}   # Creating a dictionary, where 'k' stands for 'keyword' and 'v' stands for 'value'
+
+    bitpix = find_lowest_precision(input_dir, images)
+    dtype = f"float{bitpix}"
+    # delete BITPIX from montage (always 64-bit) so that precision is from input FITS files
+    del moshead['BITPIX']
+
     # Initialise zero-valued mosaic and normalisation arrays
     if mosaic_type == 'spectral':
         shape = [(int(moshead['NAXIS3']), int(moshead['NAXIS2']), int(moshead['NAXIS1']))]
     if mosaic_type == 'continuum':
         shape = [int(moshead['NAXIS2']), int(moshead['NAXIS1'])]
 
-    mos_array = np.zeros(shape, dtype='float32')
-    norm_array = np.zeros(shape, dtype='float32')
+    mos_array = np.zeros(shape, dtype=dtype)
+    norm_array = np.zeros(shape, dtype=dtype)
     finite_array = np.zeros(shape, dtype='bool')
 
     # Gathering noise estimates for each of the input images
