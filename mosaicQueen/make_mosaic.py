@@ -91,22 +91,6 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         Run('mImgtbl -t {0:s}/{1:s}_{2:s}_fields {3:s} {0:s}/{1:s}_{2:s}_fields.tbl'.format(output_dir,outname,image_type,input_dir))
         # Create mosaic header
         Run('mMakeHdr {0:s}/{1:s}_{2:s}_fields.tbl {0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type))
-<<<<<<< HEAD:MosaicSteward/make_mosaic.py
- 
-        # Edit the .hdr file because montage specifies BITPIX = -64 but we want BITPIX = -32 if that's the precision of the input images
-        #log.info('Editing bitpix to match the lowest precision amongst the input images...')
-        bitpix = find_lowest_precision(input_dir, images)
-        moshead = [jj.strip().replace(' ', '').split('=')
-            for jj in open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type)).readlines()]
-        moshead = [ ['BITPIX', '-'+str(bitpix)] if x==['BITPIX', '-64'] else x for x in moshead ]
-        edited_hdr_file = open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type), 'w')
-        moshead = [ " = ".join(x)+"\n" for x in moshead ]
-        edited_hdr_file.writelines(moshead)
-        edited_hdr_file.close()
-        
-=======
-
->>>>>>> 34319d04d157c8dfae260ac50715b6fd4a4e4b18:mosaicQueen/make_mosaic.py
         log.info('Running montage tasks to regrid files ...')
         # Reproject the input images
         for cc in images:
@@ -134,9 +118,6 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
     return 0
 
 
-<<<<<<< HEAD:MosaicSteward/make_mosaic.py
-def update_norm(norm, slc, regrid_hdu, cutoff):
-=======
 def final_check_for_files(directory, imagesR, beamsR):
     # As the regridded files were produced by montage_mosaic, we expect them to be in the output directory
 
@@ -218,7 +199,6 @@ def estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_file
 
 
 def update_norm(norm, slc, beam_regrid_hdu, cutoff, noise):
->>>>>>> 34319d04d157c8dfae260ac50715b6fd4a4e4b18:mosaicQueen/make_mosaic.py
     """
         update normalization array
     """
@@ -258,16 +238,13 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
     moshead = {k: v for (k, v) in moshead}   # Creating a dictionary, where 'k' stands for 'keyword' and 'v' stands for 'value'
     # Initialise zero-valued mosaic and normalisation arrays
     if mosaic_type == 'spectral':
-        mos_array = np.zeros((int(moshead['NAXIS3']), int(
-            moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype=dtype)
-        norm_array = np.zeros((int(moshead['NAXIS3']), int(
-            moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
-        finite_array = np.zeros((int(moshead['NAXIS3']), int(
-            moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='bool')
+        shape = [(int(moshead['NAXIS3']), int(moshead['NAXIS2']), int(moshead['NAXIS1']))]
     if mosaic_type == 'continuum':
-        mos_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
-        norm_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
-        finite_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='bool')
+        shape = [int(moshead['NAXIS2']), int(moshead['NAXIS1'])]
+
+    mos_array = np.zeros(shape, dtype='float32')
+    norm_array = np.zeros(shape, dtype='float32')
+    finite_array = np.zeros(shape, dtype='bool')
 
     # Gathering noise estimates for each of the input images
     if uwei:
@@ -286,19 +263,12 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
         for ee in all_noise_estimates:
             log.info('    {0:.3e} Jy/beam'.format(ee)) # Assumed units
 
-    # Determine the relative weighting of each input image
-    #all_image_weightings = [(sigma)**(-2) for sigma in all_noise_estimates]
-    #sum_of_the_weights = sum(all_image_weightings)
-    #relative_image_weightings = [(1.0/sum_of_the_weights)*weighting for weighting in all_image_weightings]
-    #log.info(relative_image_weightings)
-
     # The mosaicking part: iterate over input regridded arrays and add to mosaic and normalisation arrays at each step
     weighting_index = 0
 
     for ii, bb, ss in zip(imagesR, beamsR, all_noise_estimates):
         log.info('Adding {0:s} to the mosaic ...'.format(ii))
         image_regrid_hdu = fits.open(output_dir+'/'+ii, mmap=True)  # i.e. open a specific re-gridded image
-        #image_regrid_hdu[0].image = image_regrid_hdu[0].image.astype('>f4')  # to use the data as 32-bit precision
         head = image_regrid_hdu[0].header
         beam_regrid_hdu = fits.open(output_dir+'/'+bb, mmap=True)  # i.e. open a specific re-gridded beam
 

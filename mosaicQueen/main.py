@@ -20,11 +20,11 @@ try:
 except NameError:
     FileNotFoundError = IOError
 
-
+def check_for_files(input_dir, images):
     dont_exist = False
     for tt in images:
         try:
-            open(directory+'/'+ff)
+            open(input_dir+'/'+tt)
         except FileNotFoundError:
             log.error('File {0:s} does not exist'.format(input_dir+'/'+tt))
             dont_exist = True
@@ -92,11 +92,6 @@ def main(argv):
         log.error(
             "Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
         raise LookupError("Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
-
-    # # Throw an error if the user provides only one image
-    # if len(images) < 2:
-    #    log.error('At least two images must be specified for mosaicking')
-    #    raise ValueError('At least two images must be specified for mosaicking')
 
     # 'R' to signify the regridded versions of the different .fits files
     imagesR = [tt.replace('image.fits', 'imageR.fits') for tt in images]
