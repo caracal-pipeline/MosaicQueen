@@ -72,8 +72,10 @@ def make_mosaic_header(mosaic_type, t_head):
 
 # ---------------------------- New/re-structured functions --------------------------------- #
 
-def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname):
+def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname, bitpix):
                                # image_type should be 'image', 'pb', 'model', or 'residual'
+
+    dtype = f"float{bitpix}"
 
     # Which montage program is used for regridding depends on whether the image is 2D or 3D
     if mosaic_type == 'spectral':
@@ -86,7 +88,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
     if image_type != 'pb':  # i.e. creating a header for 'image', 'model', or 'residual'
         log.info('Running montage tasks to create mosaic header ...')
         # Create an image list
-        create_montage_list(images, '{0:s}/{1:s}_{2:s}_fields'.format(output_dir,outname,image_type)) 
+        create_montage_list(images, '{0:s}/{1:s}_{2:s}_fields'.format(output_dir,outname,image_type))
         #print(sys.stdout)
         Run('mImgtbl -t {0:s}/{1:s}_{2:s}_fields {3:s} {0:s}/{1:s}_{2:s}_fields.tbl'.format(output_dir,outname,image_type,input_dir))
         # Create mosaic header
@@ -96,6 +98,13 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         for cc in images:
             Run(montage_projection + ' {0:s}/{1:s} {2:s}/{3:s} {2:s}/{4:s}_{5:s}.hdr'.format(
                 input_dir, cc, output_dir, cc.replace(image_type+'.fits', image_type+'R.fits'), outname, image_type))
+            # CONVERT FROM 64-bit TO 32-bit HERE
+            with fits.open('{0:s}/{1:s}'.format(output_dir, cc.replace(image_type+'.fits', image_type+'R.fits'))) as Rfits:
+                head = Rfits[0].header
+                if head['bitpix'] != -bitpix:
+                    log.info('      Convert from {}-bit to {}-bit ...'.format(np.abs(head['bitpix']), bitpix))
+                    head['bitpix'] = -bitpix
+                    fits.writeto('{0:s}/{1:s}'.format(output_dir, cc.replace(image_type+'.fits', image_type+'R.fits')), Rfits[0].data.astype(dtype), header=head, overwrite=True)
         # Create a reprojected-image metadata file
         create_montage_list(imagesR, '{0:s}/{1:s}_{2:s}_fields_regrid'.format(output_dir,outname, image_type))
         Run('mImgtbl -d -t {0:s}/{1:s}_{2:s}_fields_regrid {0:s} {0:s}/{1:s}_{2:s}_fields_regrid.tbl'.format(output_dir,outname,image_type)) # '-d' flag added to aid de-bugging
@@ -107,8 +116,15 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         # Reproject the input beams
         for bb in beams:
             # Assuming that an image_type == 'image' run of this function was called beforehand
-            Run(montage_projection + ' {0:s}/{1:s} {2:s}/{3:s} {2:s}/{4:s}_image.hdr'.format( 
+            Run(montage_projection + ' {0:s}/{1:s} {2:s}/{3:s} {2:s}/{4:s}_image.hdr'.format(
                 input_dir, bb, output_dir, bb.replace('pb.fits', 'pbR.fits'), outname))
+            # CONVERT FROM 64-bit TO 32-bit HERE
+            with fits.open('{0:s}/{1:s}'.format(output_dir, bb.replace('pb.fits', 'pbR.fits'))) as Rfits:
+                head = Rfits[0].header
+                if head['bitpix'] != -bitpix:
+                    log.info('      Convert from {}-bit to {}-bit ...'.format(np.abs(head['bitpix']), bitpix))
+                    head['bitpix'] = -bitpix
+                    fits.writeto('{0:s}/{1:s}'.format(output_dir, bb.replace('pb.fits', 'pbR.fits')), Rfits[0].data.astype(dtype), header=head, overwrite=True)
         # Create a reprojected-beams metadata file
         create_montage_list(beamsR, '{0:s}/{1:s}_beams_regrid'.format(output_dir,outname))
         Run('mImgtbl -t {0:s}/{1:s}_beams_regrid {0:s} {0:s}/{1:s}_beams_regrid.tbl'.format(output_dir,outname))
@@ -224,6 +240,7 @@ def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff, noise, finit
     # Set to zero before being added to mos and norm array
     mos[slc] +=  np.nan_to_num(weighted_image_tmp) * np.nan_to_num(beam_tmp) * mask / noise**2
 
+
 def find_lowest_precision(input_dir, images):
     """
         find lowest floating-point precision of the input, and return so that it can be used to set the precision of the output
@@ -236,8 +253,9 @@ def find_lowest_precision(input_dir, images):
 
     return bitpix
 
+
 #@profile
-def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, uwei, statistic, sigma_guess, images, mos_cutoff, all_noise_estimates=[]):
+def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, uwei, statistic, sigma_guess, images, mos_cutoff, bitpix, all_noise_estimates=[]):
 
 
     log.info("Creating a mosaic from '{0:s}' files ...".format(image_type))
@@ -249,7 +267,6 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
         del(moshead[moshead.index(['END'])])
     moshead = {k: v for (k, v) in moshead}   # Creating a dictionary, where 'k' stands for 'keyword' and 'v' stands for 'value'
 
-    bitpix = find_lowest_precision(input_dir, images)
     dtype = f"float{bitpix}"
     # delete BITPIX from montage (always 64-bit) so that precision is from input FITS files
     del moshead['BITPIX']
