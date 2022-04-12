@@ -256,9 +256,9 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
 
     # Initialise zero-valued mosaic and normalisation arrays
     if mosaic_type == 'spectral':
-        shape = [(int(moshead['NAXIS3']), int(moshead['NAXIS2']), int(moshead['NAXIS1']))]
+        shape = ((int(moshead['NAXIS3']), int(moshead['NAXIS2']), int(moshead['NAXIS1'])))
     if mosaic_type == 'continuum':
-        shape = [int(moshead['NAXIS2']), int(moshead['NAXIS1'])]
+        shape = (int(moshead['NAXIS2']), int(moshead['NAXIS1']))
 
     mos_array = np.zeros(shape, dtype=dtype)
     norm_array = np.zeros(shape, dtype=dtype)
