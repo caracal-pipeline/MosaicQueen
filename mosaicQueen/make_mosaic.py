@@ -227,7 +227,7 @@ def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff, noise, finit
 
 
 @profile
-def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, uwei, statistic, sigma_guess, images, all_noise_estimates=[]):
+def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, uwei, statistic, sigma_guess, images, mos_cutoff, all_noise_estimates=[]):
 
     log.info("Creating a mosaic from '{0:s}' files ...".format(image_type))
 
@@ -276,6 +276,7 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
     # The mosaicking part: iterate over input regridded arrays and add to mosaic and normalisation arrays at each step
     weighting_index = 0
 
+    log.info('Adding single fields to mosaic using primary beam cutoff = {0:.3f} (set by --beam-cutoff)'.format(cutoff))
     for ii, bb, ss in zip(imagesR, beamsR, all_noise_estimates):
         log.info('Adding {0:s} to the mosaic ...'.format(ii))
         image_regrid_hdu = fits.open(output_dir+'/'+ii, mmap=True)  # i.e. open a specific re-gridded image
@@ -298,6 +299,12 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
         weighting_index = weighting_index + 1
         image_regrid_hdu.close()
         beam_regrid_hdu.close()
+
+    # Blank pixels below the sensitivity cutoff = mos_cutoff in the final mosaic
+    # Since sigma = 1/sqrt(norm), then pixels should be blanked if:
+    #   sigma > sigma_min / mos_cutoff  ->  norm < norm_max * mos_cutoff**2
+    log.info('Blanking mosaic pixels with noise level > minimum mosaic noise level / {0:.3f} (set by --mosaic_cutoff)'.format(mos_cutoff))
+    finite_array[norm_array < np.nanmax(norm_array) * mos_cutoff**2] = False
 
     # Pixels whose value is False in the finite array are blanked in the final mos and norm arrays
     mos_array[~finite_array] = np.nan
