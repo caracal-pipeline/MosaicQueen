@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
 # ------------------------------------------------------------------------------------------------------
-# Author of package: Sarah White (sarahwhite.astro@gmail.com) and Sphe Makhathini (sphemakh@gmail.com)
-# Based on a mosaicking script by Paolo Serra (paolo.serra@inaf.it)
+# Authors of package: Sarah White (sarahwhite.astro@gmail.com)
+#                     Sphe Makhathini (sphemakh@gmail.com)
+#                     Paolo Serra (paolo.serra@inaf.it)
 # ------------------------------------------------------------------------------------------------------
 
 from mosaicQueen import make_mosaic
@@ -139,7 +140,7 @@ def main(argv):
         #else:  # redundant
         #    log.info('Regridded beams are all in place')
     else:
-        log.info('User specified neither --force-regrid nor --regrid in the MosaicKing command')
+        log.info('User specified neither --force-regrid nor --regrid in the mosaic-queen command')
         log.info(
             'Will use mosaic header {0:s}.hdr and regridded images and beams available on disk'.format(outname))
         make_mosaic.final_check_for_files(output_dir, imagesR, beamsR)  # This function raises an error and exits if files are not found
@@ -174,7 +175,7 @@ def main(argv):
             #else:  # redundant
             #    log.info('Regridded residuals are all in place')
         else:
-            log.info('User specified neither --force-regrid nor --regrid in the MosaicKing command')
+            log.info('User specified neither --force-regrid nor --regrid in the mosaic-queen command')
             log.info(
                 'Will use regridded models and residuals available on disk'.format(outname))
             check_for_files(output_dir, modelsR, 'regridded models', args.regrid)
