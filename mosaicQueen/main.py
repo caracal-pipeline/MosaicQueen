@@ -21,17 +21,30 @@ try:
 except NameError:
     FileNotFoundError = IOError
 
-def check_for_files(input_dir, images):
+def check_for_files(directory, fits_files, type_of_fits_file, regrid_boolean):
+    # Remember that if regridded files were produced by MosaicKing, we expect them to be in the output directory
+    # Check location for beams made by MosaicKing
+
     dont_exist = False
-    for tt in images:
+    exit_if_not_found_list = [ 'images', 'beams', 'models', 'residuals' ]
+    for ff in fits_files:
         try:
-            open(input_dir+'/'+tt)
+            open(directory+'/'+ff)
         except FileNotFoundError:
-            log.error('File {0:s} does not exist'.format(input_dir+'/'+tt))
             dont_exist = True
+            if type_of_fits_file in exit_if_not_found_list:
+                log.error('File {0:s} does not exist'.format(directory+'/'+ff))
+                raise FileNotFoundError
+            else:  # Intended for the regridded files
+                if regrid_boolean:
+                    log.warning('File {0:s} does not exist'.format(directory+'/'+ff))
+                else:
+                    log.error('File {0:s} does not exist'.format(directory+'/'+ff))
+                    raise FileNotFoundError
+    if dont_exist == False:  # i.e they do exist(!)
+        log.info('All {0:s} found on disk'.format(type_of_fits_file))
 
     return dont_exist
-
 
 def main(argv):
 
