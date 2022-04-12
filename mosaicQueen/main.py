@@ -133,7 +133,6 @@ def main(argv):
         check_for_files(input_dir, models, 'models', args.regrid)  # This raises an error and exits if files are not found
         check_for_files(input_dir, residuals, 'residuals', args.regrid)  # This raises an error and exits if files are not found
 
-    log.info("Mosaicking 'image' files")
     if args.force_regrid:
         log.info('You have asked for all regridded files to be created by this run, even if they are already on disk')
         make_mosaic.use_montage_for_regridding(
@@ -163,6 +162,7 @@ def main(argv):
         make_mosaic.final_check_for_files(output_dir, imagesR, beamsR)  # This function raises an error and exits if files are not found
 
 
+    log.info("Mosaicking 'image' files")
     noises = make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'image', outname, imagesR, beamsR, beam_cutoff, unity_weights, statistic, sigma_guess, images, mosaic_cutoff)
 
 
