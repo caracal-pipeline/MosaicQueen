@@ -72,8 +72,10 @@ def make_mosaic_header(mosaic_type, t_head):
 
 # ---------------------------- New/re-structured functions --------------------------------- #
 
-def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname):
+def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname, bitpix):
                                # image_type should be 'image', 'pb', 'model', or 'residual'
+
+    dtype = f"float{bitpix}"
 
     # Which montage program is used for regridding depends on whether the image is 2D or 3D
     if mosaic_type == 'spectral':
@@ -86,17 +88,23 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
     if image_type != 'pb':  # i.e. creating a header for 'image', 'model', or 'residual'
         log.info('Running montage tasks to create mosaic header ...')
         # Create an image list
-        create_montage_list(images, '{0:s}/{1:s}_{2:s}_fields'.format(output_dir,outname,image_type)) 
+        create_montage_list(images, '{0:s}/{1:s}_{2:s}_fields'.format(output_dir,outname,image_type))
         #print(sys.stdout)
         Run('mImgtbl -t {0:s}/{1:s}_{2:s}_fields {3:s} {0:s}/{1:s}_{2:s}_fields.tbl'.format(output_dir,outname,image_type,input_dir))
         # Create mosaic header
         Run('mMakeHdr {0:s}/{1:s}_{2:s}_fields.tbl {0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type))
-
         log.info('Running montage tasks to regrid files ...')
         # Reproject the input images
         for cc in images:
             Run(montage_projection + ' {0:s}/{1:s} {2:s}/{3:s} {2:s}/{4:s}_{5:s}.hdr'.format(
                 input_dir, cc, output_dir, cc.replace(image_type+'.fits', image_type+'R.fits'), outname, image_type))
+            # CONVERT FROM 64-bit TO 32-bit HERE
+            with fits.open('{0:s}/{1:s}'.format(output_dir, cc.replace(image_type+'.fits', image_type+'R.fits'))) as Rfits:
+                head = Rfits[0].header
+                if head['bitpix'] != -bitpix:
+                    log.info('      Convert from {}-bit to {}-bit ...'.format(np.abs(head['bitpix']), bitpix))
+                    head['bitpix'] = -bitpix
+                    fits.writeto('{0:s}/{1:s}'.format(output_dir, cc.replace(image_type+'.fits', image_type+'R.fits')), Rfits[0].data.astype(dtype), header=head, overwrite=True)
         # Create a reprojected-image metadata file
         create_montage_list(imagesR, '{0:s}/{1:s}_{2:s}_fields_regrid'.format(output_dir,outname, image_type))
         Run('mImgtbl -d -t {0:s}/{1:s}_{2:s}_fields_regrid {0:s} {0:s}/{1:s}_{2:s}_fields_regrid.tbl'.format(output_dir,outname,image_type)) # '-d' flag added to aid de-bugging
@@ -108,8 +116,15 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         # Reproject the input beams
         for bb in beams:
             # Assuming that an image_type == 'image' run of this function was called beforehand
-            Run(montage_projection + ' {0:s}/{1:s} {2:s}/{3:s} {2:s}/{4:s}_image.hdr'.format( 
+            Run(montage_projection + ' {0:s}/{1:s} {2:s}/{3:s} {2:s}/{4:s}_image.hdr'.format(
                 input_dir, bb, output_dir, bb.replace('pb.fits', 'pbR.fits'), outname))
+            # CONVERT FROM 64-bit TO 32-bit HERE
+            with fits.open('{0:s}/{1:s}'.format(output_dir, bb.replace('pb.fits', 'pbR.fits'))) as Rfits:
+                head = Rfits[0].header
+                if head['bitpix'] != -bitpix:
+                    log.info('      Convert from {}-bit to {}-bit ...'.format(np.abs(head['bitpix']), bitpix))
+                    head['bitpix'] = -bitpix
+                    fits.writeto('{0:s}/{1:s}'.format(output_dir, bb.replace('pb.fits', 'pbR.fits')), Rfits[0].data.astype(dtype), header=head, overwrite=True)
         # Create a reprojected-beams metadata file
         create_montage_list(beamsR, '{0:s}/{1:s}_beams_regrid'.format(output_dir,outname))
         Run('mImgtbl -t {0:s}/{1:s}_beams_regrid {0:s} {0:s}/{1:s}_beams_regrid.tbl'.format(output_dir,outname))
@@ -226,8 +241,22 @@ def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff, noise, finit
     mos[slc] +=  np.nan_to_num(weighted_image_tmp) * np.nan_to_num(beam_tmp) * mask / noise**2
 
 
+def find_lowest_precision(input_dir, images):
+    """
+        find lowest floating-point precision of the input, and return so that it can be used to set the precision of the output
+    """
+    bitpix_list = []
+    for image in images:
+        with fits.open(os.path.join(input_dir,image)) as hdul:
+            bitpix_list.append( abs(int(hdul[0]._bitpix)) )
+    bitpix = min(bitpix_list)
+
+    return bitpix
+
+
 #@profile
-def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, uwei, statistic, sigma_guess, images, mos_cutoff, all_noise_estimates=[]):
+def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, uwei, statistic, sigma_guess, images, mos_cutoff, bitpix, all_noise_estimates=[]):
+
 
     log.info("Creating a mosaic from '{0:s}' files ...".format(image_type))
 
@@ -237,18 +266,20 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
     if ['END'] in moshead:
         del(moshead[moshead.index(['END'])])
     moshead = {k: v for (k, v) in moshead}   # Creating a dictionary, where 'k' stands for 'keyword' and 'v' stands for 'value'
+
+    dtype = f"float{bitpix}"
+    # delete BITPIX from montage (always 64-bit) so that precision is from input FITS files
+    del moshead['BITPIX']
+
     # Initialise zero-valued mosaic and normalisation arrays
     if mosaic_type == 'spectral':
-        mos_array = np.zeros((int(moshead['NAXIS3']), int(
-            moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
-        norm_array = np.zeros((int(moshead['NAXIS3']), int(
-            moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
-        finite_array = np.zeros((int(moshead['NAXIS3']), int(
-            moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='bool')
+        shape = ((int(moshead['NAXIS3']), int(moshead['NAXIS2']), int(moshead['NAXIS1'])))
     if mosaic_type == 'continuum':
-        mos_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
-        norm_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='float32')
-        finite_array = np.zeros((int(moshead['NAXIS2']), int(moshead['NAXIS1'])), dtype='bool')
+        shape = (int(moshead['NAXIS2']), int(moshead['NAXIS1']))
+
+    mos_array = np.zeros(shape, dtype=dtype)
+    norm_array = np.zeros(shape, dtype=dtype)
+    finite_array = np.zeros(shape, dtype='bool')
 
     # Gathering noise estimates for each of the input images
     if uwei:
@@ -266,12 +297,6 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
         log.info("Summary of noise levels estimated from the 'image' files:")
         for ee in all_noise_estimates:
             log.info('    {0:.3e} Jy/beam'.format(ee)) # Assumed units
-
-    # Determine the relative weighting of each input image
-    #all_image_weightings = [(sigma)**(-2) for sigma in all_noise_estimates]
-    #sum_of_the_weights = sum(all_image_weightings)
-    #relative_image_weightings = [(1.0/sum_of_the_weights)*weighting for weighting in all_image_weightings]
-    #log.info(relative_image_weightings)
 
     # The mosaicking part: iterate over input regridded arrays and add to mosaic and normalisation arrays at each step
     weighting_index = 0

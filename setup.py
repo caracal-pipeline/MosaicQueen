@@ -12,7 +12,7 @@ requirements = [
 ]
 
 PACKAGE_NAME = 'mosaic-queen'
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 setup(name = PACKAGE_NAME,
     version = __version__,
