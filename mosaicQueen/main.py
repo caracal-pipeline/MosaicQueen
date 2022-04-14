@@ -53,7 +53,7 @@ def main(argv):
 
     parser.add_argument("-i", "--input",
                         help="The directory that contains the (2D or 3D) images and beams.")
-    parser.add_argument("-t", "--target-images", action="append",
+    parser.add_argument("-t", "--target-images", nargs='+', required = True,
                         help="The filenames of each target/pointing image to be mosaicked. A suffix of 'image.fits' is expected, "
                              "and this is replaced by 'pb.fits' in order to locate the corresponding beams (which are also required as input).")
     parser.add_argument("-o", "--output",
@@ -84,7 +84,7 @@ def main(argv):
                              "used for estimating the noise level in the input images. This will be derived using the negative pixel-values. "
                              "The noise levels set the weights=1/noise**2 used when mosaicking. Not used if the '-u' option is enabled. Default is mad.")
     parser.add_argument("-g", "--guess-std", type=float, default=0.02,
-                        help="An initial guess of the noise level in the input images, if user has set '--statistic' to 'std'."
+                        help="An initial guess of the noise level in the input images, if user has set '--statistic' to 'fit'."
                              "(This is to aid a Gaussian fit to the negative pixel-values.) The default of 0.02 assumes that "
                              "the pixel values are in units of Jy/beam, so a std of ~ 20 mJy/beam).")
 
