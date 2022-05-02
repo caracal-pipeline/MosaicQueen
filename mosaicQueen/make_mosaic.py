@@ -69,10 +69,9 @@ def make_mosaic_header(mosaic_type, t_head):
         astro_t_head[hh] = astro_t_head[hh].replace("'", "")
     return astro_t_head
 
-
 # ---------------------------- New/re-structured functions --------------------------------- #
 
-def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname, bitpix):
+def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname, bitpix, subimage_dict):
                                # image_type should be 'image', 'pb', 'model', or 'residual'
 
     dtype = f"float{bitpix}"
@@ -93,6 +92,36 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         Run('mImgtbl -t {0:s}/{1:s}_{2:s}_fields {3:s} {0:s}/{1:s}_{2:s}_fields.tbl'.format(output_dir,outname,image_type,input_dir))
         # Create mosaic header
         Run('mMakeHdr {0:s}/{1:s}_{2:s}_fields.tbl {0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type))
+
+        if subimage_dict['CRVAL1']:
+            with open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type, 'r')) as f:
+                data = f.readlines()
+
+#            data_original = data.copy()
+
+            print(data)
+            print('------')
+            for key in subimage_dict:
+                if subimage_dict[key]:
+                    for i,line in enumerate(data):
+                        if key in line:
+                            l = line.split(' ')
+                            l[-1] = '{}\n'.format(subimage_dict[key])
+                            data[i] = ' '.join(l)
+                        elif key in ['NAXIS1','NAXIS2','NAXIS3'] and 'CRPIX{}'.format(key[-1]) in line:
+                            l = line.split(' ')
+                            l[-1] = '{}\n'.format(subimage_dict[key]/2)
+                            data[i] = ' '.join(l)
+            print(data)
+
+#            with open('{0:s}/{1:s}_{2:s}_subim.hdr'.format(output_dir,outname,image_type, 'w+')) as f:
+            f = open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type), 'wt')
+            for line in data:
+                f.write(line)
+            f.close()
+
+#        sys.exit()
+
         log.info('Running montage tasks to regrid files ...')
         # Reproject the input images
         for cc in images:

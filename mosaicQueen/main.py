@@ -87,6 +87,24 @@ def main(argv):
                         help="An initial guess of the noise level in the input images, if user has set '--statistic' to 'fit'."
                              "(This is to aid a Gaussian fit to the negative pixel-values.) The default of 0.02 assumes that "
                              "the pixel values are in units of Jy/beam, so a std of ~ 20 mJy/beam).")
+    parser.add_argument("-ra", type=float,
+                        help="The RA (in degrees) of the centre of the output image/cube, if the user does not want to image "
+                        "the entire FoV covered by the inputted target/pointing images.")
+    parser.add_argument("-dec", type=float,
+                        help="The Dec (in degrees) of the centre of the output image/cube, if the user does not want to image "
+                        "the entire FoV covered by the inputted target/pointing images.")
+    parser.add_argument("-v", "--velocity", type=float,
+                        help="The velocity or frequency (in the appropriate units of the input cube) of the centre of the output "
+                        "cube, if the user does not want to image the entire FoV covered by the inputted target/pointing images.")
+    parser.add_argument("-dx", type=int,
+                        help="Width of the output image/cube (in pixels), if the user does not want to image "
+                        "the entire FoV covered by the inputted target/pointing images.")
+    parser.add_argument("-dy", type=int,
+                        help="Height of the output image/cube (in pixels), if the user does not want to image "
+                        "the entire FoV covered by the inputted target/pointing images.")
+    parser.add_argument("-dz", type=int,
+                        help="Depth of the output cube (in pixels), if the user does not want to image "
+                        "the entire FoV covered by the inputted target/pointing images.")
 
     args = parser.parse_args(argv)
     input_dir = args.input
@@ -99,6 +117,28 @@ def main(argv):
     outname = args.name
     output_dir = args.output
     os.makedirs(output_dir, exist_ok=True)
+
+    ''' 
+    REMINDER: CHECK IF SUBIMAGE INFO IS COMPLETE (I.E. HAS ALL NECESSARY VALUES FOR THE GIVEN MOSAIC TYPE)
+    '''
+
+    subimage_dict = {
+        'CRVAL1': args.ra,
+        'CRVAL2': args.dec,
+        'CRVAL3': args.velocity,
+        'NAXIS1': args.dx,
+        'NAXIS2': args.dy,
+        'NAXIS3': args.dz,
+    }
+
+    print('testing')
+    print(subimage_dict)
+
+#    sys.exit()
+
+    for key in subimage_dict:
+        if subimage_dict[key]:
+            print(key,subimage_dict[key])
 
     if args.target_images:
         if len(args.target_images) == 1:
@@ -140,23 +180,23 @@ def main(argv):
     if args.force_regrid:
         log.info('You have asked for all regridded files to be created by this run, even if they are already on disk')
         make_mosaic.use_montage_for_regridding(
-            input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname, bitpix)
+            input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname, bitpix, subimage_dict)
         make_mosaic.use_montage_for_regridding(
-            input_dir, output_dir, mosaic_type, 'pb', images, imagesR, beams, beamsR, outname, bitpix)
+            input_dir, output_dir, mosaic_type, 'pb', images, imagesR, beams, beamsR, outname, bitpix, subimage_dict)
     elif args.regrid:
         log.info('Checking for regridded images and beams')
         imagesR_dont_exist = check_for_files(output_dir, imagesR, 'regridded images', args.regrid)
         if imagesR_dont_exist:
             log.info('Regridded images are not all in place, so using montage to create them')
             make_mosaic.use_montage_for_regridding(
-                input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname, bitpix)
+                input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname, bitpix, subimage_dict)
         else:
             log.info('Regridded images are all in place')
         beamsR_dont_exist = check_for_files(output_dir, beamsR, 'regridded beams', args.regrid)
         if beamsR_dont_exist:
             log.info('Regridded beams are not all in place, so using montage to create them')
             make_mosaic.use_montage_for_regridding(
-                input_dir, output_dir, mosaic_type, 'pb', images, imagesR, beams, beamsR, outname, bitpix)
+                input_dir, output_dir, mosaic_type, 'pb', images, imagesR, beams, beamsR, outname, bitpix, subimage_dict)
         #else:  # redundant
         #    log.info('Regridded beams are all in place')
     else:
@@ -176,23 +216,23 @@ def main(argv):
         if args.force_regrid:
             log.info('You have asked for all regridded files to be created by this run, even if they are already on disk')
             make_mosaic.use_montage_for_regridding(
-                input_dir, output_dir, mosaic_type, 'model', models, modelsR, beams, beamsR, outname, bitpix)
+                input_dir, output_dir, mosaic_type, 'model', models, modelsR, beams, beamsR, outname, bitpix, subimage_dict)
             make_mosaic.use_montage_for_regridding(
-                input_dir, output_dir, mosaic_type, 'residual', residuals, residualsR, beams, beamsR, outname, bitpix)
+                input_dir, output_dir, mosaic_type, 'residual', residuals, residualsR, beams, beamsR, outname, bitpix, subimage_dict)
         elif args.regrid:
             log.info('Checking for regridded models and residuals')
             modelsR_dont_exist = check_for_files(output_dir, modelsR, 'regridded models', args.regrid)
             if modelsR_dont_exist:
                 log.info('Regridded models are not all in place, so using montage to create them')
                 make_mosaic.use_montage_for_regridding(
-                    input_dir, output_dir, mosaic_type, 'model', models, modelsR, beams, beamsR, outname, bitpix)
+                    input_dir, output_dir, mosaic_type, 'model', models, modelsR, beams, beamsR, outname, bitpix, subimage_dict)
             #else:  # redundant
             #    log.info('Regridded models are all in place')
             residualsR_dont_exist = check_for_files(output_dir, residualsR, 'regridded residuals', args.regrid)
             if residualsR_dont_exist:
                 log.info('Regridded residuals are not all in place, so using montage to create them')
                 make_mosaic.use_montage_for_regridding(
-                    input_dir, output_dir, mosaic_type, 'residual', residuals, residualsR, beams, beamsR, outname, bitpix)
+                    input_dir, output_dir, mosaic_type, 'residual', residuals, residualsR, beams, beamsR, outname, bitpix, subimage_dict)
             #else:  # redundant
             #    log.info('Regridded residuals are all in place')
         else:
