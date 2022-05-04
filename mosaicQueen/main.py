@@ -96,14 +96,14 @@ def main(argv):
     parser.add_argument("-v", "--velocity", type=float,
                         help="The velocity or frequency (in the appropriate units of the input cube) of the centre of the output "
                         "cube, if the user does not want to image the entire FoV covered by the inputted target/pointing images.")
-    parser.add_argument("-dx", type=int,
-                        help="Width of the output image/cube (in pixels), if the user does not want to image "
+    parser.add_argument("-dra", type=float, default =1,
+                        help="Width of the output image/cube in RA (in degrees), if the user does not want to image "
                         "the entire FoV covered by the inputted target/pointing images.")
-    parser.add_argument("-dy", type=int,
-                        help="Height of the output image/cube (in pixels), if the user does not want to image "
+    parser.add_argument("-ddec", type=float, default = 1,
+                        help="Height of the output image/cube in Dec (in degrees), if the user does not want to image "
                         "the entire FoV covered by the inputted target/pointing images.")
-    parser.add_argument("-dz", type=int,
-                        help="Depth of the output cube (in pixels), if the user does not want to image "
+    parser.add_argument("-dv", type=float,
+                        help="Depth of the output cube in velocity/frequency (in the unit used by the input images), if the user does not want to image "
                         "the entire FoV covered by the inputted target/pointing images.")
 
     args = parser.parse_args(argv)
@@ -126,19 +126,10 @@ def main(argv):
         'CRVAL1': args.ra,
         'CRVAL2': args.dec,
         'CRVAL3': args.velocity,
-        'NAXIS1': args.dx,
-        'NAXIS2': args.dy,
-        'NAXIS3': args.dz,
+        'dRA':    args.dra,
+        'dDec':   args.ddec,
+        'dv':     args.dv,
     }
-
-    print('testing')
-    print(subimage_dict)
-
-#    sys.exit()
-
-    for key in subimage_dict:
-        if subimage_dict[key]:
-            print(key,subimage_dict[key])
 
     if args.target_images:
         if len(args.target_images) == 1:
@@ -152,10 +143,24 @@ def main(argv):
             "Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
         raise LookupError("Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
 
+    if (args.ra and not args.dec) or (args.dec and not args.ra):
+        log.error(
+            "Must define both '-ra' and '-dec' (centre of the mosiac), if either is set .")
+        raise LookupError("Must define both '-ra' and '-dec' (centre of the mosiac), if either is set .")
+
+    if (mosaic_type == 'spectral') and (args.velocity and not args.dv):
+        log.error(
+            "Must define a cube size along the z-axis ('-dv'), if a mosaic central coordinate along this axis was requested ('-v').")
+        raise LookupError("Must define a cube size along the z-axis ('-dv'), if a mosaic central coordinate along this axis was requested ('-v').")
+
     # 'R' to signify the regridded versions of the different .fits files
+    if subimage_dict['CRVAL1']:
+        images = make_mosaic.filter_images_list(images, subimage_dict, input_dir, mosaic_type)
+        log.info('Target images overlapping with the requested region to be mosaicked = {}'.format(" ".join(images)))
     imagesR = [tt.replace('image.fits', 'imageR.fits') for tt in images]
     beams = [tt.replace('image.fits', 'pb.fits') for tt in images]
     beamsR = [tt.replace('image.fits', 'pbR.fits') for tt in images]
+
     if args.associated_mosaics:
         log.info('Will generate mosaics made from the input images, their associated models, and their residuals')
         models = [tt.replace('image.fits', 'model.fits') for tt in images]

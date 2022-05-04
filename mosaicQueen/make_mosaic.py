@@ -50,7 +50,6 @@ def Run(command, verb1=1, verb2=0, getout=0):
     if getout:
         return result
 
-
 def make_mosaic_header(mosaic_type, t_head):
     astro_t_head = fits.Header()
     for hh in t_head.keys():
@@ -71,6 +70,35 @@ def make_mosaic_header(mosaic_type, t_head):
 
 # ---------------------------- New/re-structured functions --------------------------------- #
 
+def filter_images_list(images, subimage_dict, input_dir, mosaic_type):
+    images_filtered = []
+    width_ls = ['dRA','dDec','dv'] if (mosaic_type == 'spectral' and subimage_dict['dv']) else ['dRA','dDec']
+    min_subim, max_subim = [], []
+    hdul = fits.open('{0:s}/{1:s}'.format(input_dir,images[0]))
+    for i,width in enumerate(width_ls):
+        crval = subimage_dict['CRVAL{}'.format(i+1)]
+        min_subim.append(crval - subimage_dict[width]/2.)
+        max_subim.append(crval + subimage_dict[width]/2.)
+    for im in images:
+        hdul = fits.open('{0:s}/{1:s}'.format(input_dir,im))
+        for i in range(len((width_ls))):
+            cdelt = abs(hdul[0].header['CDELT{}'.format(i+1)])
+            crval = hdul[0].header['CRVAL{}'.format(i+1)]
+            naxis = hdul[0].header['NAXIS{}'.format(i+1)]
+            crpix = hdul[0].header['CRPIX{}'.format(i+1)]
+            min_im = crval - (crpix*cdelt)
+            max_im = crval + ((naxis-crpix)*cdelt)
+            if (min_im < max_subim[i]) and (min_subim[i] < max_im):
+                overlap = True
+            else:
+                overlap = False
+                break
+
+        if overlap:
+            images_filtered.append(im)
+
+    return images_filtered
+
 def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname, bitpix, subimage_dict):
                                # image_type should be 'image', 'pb', 'model', or 'residual'
 
@@ -88,39 +116,45 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         log.info('Running montage tasks to create mosaic header ...')
         # Create an image list
         create_montage_list(images, '{0:s}/{1:s}_{2:s}_fields'.format(output_dir,outname,image_type))
-        #print(sys.stdout)
         Run('mImgtbl -t {0:s}/{1:s}_{2:s}_fields {3:s} {0:s}/{1:s}_{2:s}_fields.tbl'.format(output_dir,outname,image_type,input_dir))
         # Create mosaic header
         Run('mMakeHdr {0:s}/{1:s}_{2:s}_fields.tbl {0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type))
 
         if subimage_dict['CRVAL1']:
-            with open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type, 'r')) as f:
+            with open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type),'r') as f:
                 data = f.readlines()
 
-#            data_original = data.copy()
+            width_ls = ['dRA','dDec','dv'] if (mosaic_type == 'spectral' and subimage_dict['dv']) else ['dRA','dDec']
+            naxis_new = {}
+            for i,width in enumerate(width_ls):
+                for line in data:
+                    if 'CDELT{}'.format(i+1) in line:
+                        cdelt = (abs(float(line.split(' ')[-1])))
+                        break
+                naxis_new['NAXIS{}'.format(i+1)] = (round(subimage_dict[width]/cdelt))
 
-            print(data)
-            print('------')
-            for key in subimage_dict:
-                if subimage_dict[key]:
-                    for i,line in enumerate(data):
-                        if key in line:
-                            l = line.split(' ')
-                            l[-1] = '{}\n'.format(subimage_dict[key])
-                            data[i] = ' '.join(l)
-                        elif key in ['NAXIS1','NAXIS2','NAXIS3'] and 'CRPIX{}'.format(key[-1]) in line:
-                            l = line.split(' ')
-                            l[-1] = '{}\n'.format(subimage_dict[key]/2)
-                            data[i] = ' '.join(l)
-            print(data)
+            ax_ls = ['1','2','3'] if (mosaic_type == 'spectral' and subimage_dict['dv']) else ['1','2']
+            for ax in ax_ls:
+                for i,line in enumerate(data):
+                    key1 = 'CRVAL{}'.format(ax)
+                    key2 = 'NAXIS{}'.format(ax)
+                    key3 = 'CRPIX{}'.format(ax)
+                    if key1 in line:
+                        l = line.split(' ')
+                        l[-1] = '{}\n'.format(subimage_dict[key1])
+                        data[i] = ' '.join(l)
+                    elif key2 in line:
+                        l = line.split(' ')
+                        l[-1] = '{}\n'.format(naxis_new[key2])
+                        data[i] = ' '.join(l)
+                    elif key3 in line:
+                        l = line.split(' ')
+                        l[-1] = '{}\n'.format(naxis_new[key2]/2)
+                        data[i] = ' '.join(l)
 
-#            with open('{0:s}/{1:s}_{2:s}_subim.hdr'.format(output_dir,outname,image_type, 'w+')) as f:
-            f = open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type), 'wt')
-            for line in data:
-                f.write(line)
-            f.close()
-
-#        sys.exit()
+            with open('{0:s}/{1:s}_{2:s}_subim.hdr'.format(output_dir,outname,image_type), 'w') as f:
+                for line in data:
+                    f.write(line)
 
         log.info('Running montage tasks to regrid files ...')
         # Reproject the input images
