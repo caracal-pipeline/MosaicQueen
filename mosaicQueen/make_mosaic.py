@@ -152,7 +152,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
                         l[-1] = '{}\n'.format(naxis_new[key2]/2)
                         data[i] = ' '.join(l)
 
-            with open('{0:s}/{1:s}_{2:s}_subim.hdr'.format(output_dir,outname,image_type), 'w') as f:
+            with open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type), 'w') as f:
                 for line in data:
                     f.write(line)
 
