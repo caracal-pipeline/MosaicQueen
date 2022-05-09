@@ -7,7 +7,6 @@ requirements = [
 "numpy",
 "futures",
 "astropy",
-"montage-wrapper",
 "memory-profiler",
 "matplotlib",
 "scipy"
