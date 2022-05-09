@@ -16,11 +16,11 @@ First install montage via
   
     sudo apt install montage
 
-Packaged is available on PyPI (https://pypi.org/project/mosaic-queen) and so it is installable via
+Package is available on PyPI (https://pypi.org/project/mosaic-queen) and so it is installable via
 
 .. code-block:: bash
   
-    pip install aimfast
+    pip install mosaic-queen
 
 
 Work in progress: convolution of input images to a common synthesised beam before mosaicking, and employing parallel processing to speed this up...
