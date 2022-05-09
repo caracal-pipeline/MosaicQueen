@@ -5,7 +5,6 @@ from setuptools import setup, find_packages
 
 requirements = [
 "numpy",
-"futures",
 "astropy",
 "memory-profiler",
 "matplotlib",
