@@ -5,14 +5,14 @@ from setuptools import setup, find_packages
 
 requirements = [
 "numpy",
-"futures",
 "astropy",
-"montage-wrapper",
 "memory-profiler",
+"matplotlib",
+"scipy"
 ]
 
 PACKAGE_NAME = 'mosaic-queen'
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 setup(name = PACKAGE_NAME,
     version = __version__,
