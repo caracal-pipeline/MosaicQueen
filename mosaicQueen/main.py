@@ -51,12 +51,12 @@ def main(argv):
 
     parser = ArgumentParser(description="Run make_mosaic over the targets")
 
-    parser.add_argument("-i", "--input",
+    parser.add_argument("-i", "--input", required = True,
                         help="The directory that contains the (2D or 3D) images and beams.")
     parser.add_argument("-t", "--target-images", nargs='+', required = True,
                         help="The filenames of each target/pointing image to be mosaicked. A suffix of 'image.fits' is expected, "
                              "and this is replaced by 'pb.fits' in order to locate the corresponding beams (which are also required as input).")
-    parser.add_argument("-o", "--output",
+    parser.add_argument("-o", "--output", required = True,
                         help="The directory for all output files.")
     parser.add_argument("-n", "--name", default="mymosaic",
                         help="The prefix to be used for output files.")
@@ -96,10 +96,10 @@ def main(argv):
     parser.add_argument("-v", "--velocity", type=float,
                         help="The velocity or frequency (in the appropriate units of the input cube) of the centre of the output "
                         "cube, if the user does not want to image the entire FoV covered by the inputted target/pointing images.")
-    parser.add_argument("-dra", type=float, default =1,
+    parser.add_argument("-dra", type=float,
                         help="Width of the output image/cube in RA (in degrees), if the user does not want to image "
                         "the entire FoV covered by the inputted target/pointing images.")
-    parser.add_argument("-ddec", type=float, default = 1,
+    parser.add_argument("-ddec", type=float,
                         help="Height of the output image/cube in Dec (in degrees), if the user does not want to image "
                         "the entire FoV covered by the inputted target/pointing images.")
     parser.add_argument("-dv", type=float,
@@ -143,23 +143,23 @@ def main(argv):
             "Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
         raise LookupError("Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
 
-    if (args.ra and not args.dec) or (args.dec and not args.ra):
-        log.error(
-            "Must define both '-ra' and '-dec' (centre of the mosiac), if either is set .")
-        raise LookupError("Must define both '-ra' and '-dec' (centre of the mosiac), if either is set .")
-
     if (mosaic_type == 'spectral') and (args.velocity and not args.dv):
         log.error(
             "Must define a cube size along the z-axis ('-dv'), if a mosaic central coordinate along this axis was requested ('-v').")
         raise LookupError("Must define a cube size along the z-axis ('-dv'), if a mosaic central coordinate along this axis was requested ('-v').")
 
     # 'R' to signify the regridded versions of the different .fits files
-    if subimage_dict['CRVAL1']:
-        images = make_mosaic.filter_images_list(images, subimage_dict, input_dir, mosaic_type)
+    if subimage_dict['CRVAL1'] or subimage_dict['CRVAL2']:
+        images = make_mosaic.filter_images_list_v2(images, subimage_dict, input_dir, mosaic_type)
         log.info('Target images overlapping with the requested region to be mosaicked = {}'.format(" ".join(images)))
-    imagesR = [tt.replace('image.fits', 'imageR.fits') for tt in images]
-    beams = [tt.replace('image.fits', 'pb.fits') for tt in images]
-    beamsR = [tt.replace('image.fits', 'pbR.fits') for tt in images]
+    if subimage_dict['CRVAL3'] and (args.force_regrid or args.regrid):
+        imagesR = [tt.replace('image.fits', 'z_cut_imageR.fits') for tt in images]
+        beams = [tt.replace('image.fits', 'z_cut_pb.fits') for tt in images]
+        beamsR = [tt.replace('image.fits', 'z_cut_pbR.fits') for tt in images]
+    else:
+        imagesR = [tt.replace('image.fits', 'imageR.fits') for tt in images]
+        beams = [tt.replace('image.fits', 'pb.fits') for tt in images]
+        beamsR = [tt.replace('image.fits', 'pbR.fits') for tt in images]
 
     if args.associated_mosaics:
         log.info('Will generate mosaics made from the input images, their associated models, and their residuals')
@@ -212,6 +212,7 @@ def main(argv):
 
 
     log.info("Mosaicking 'image' files")
+
     noises = make_mosaic.make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, 'image', outname, imagesR, beamsR, beam_cutoff, unity_weights, statistic, sigma_guess, images, mosaic_cutoff, bitpix)
 
 

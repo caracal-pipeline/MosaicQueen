@@ -16,6 +16,8 @@ import argparse
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from memory_profiler import profile
+from astropy.wcs import WCS
+import math
 
 log = mosaicQueen.log
 
@@ -74,9 +76,7 @@ def filter_images_list(images, subimage_dict, input_dir, mosaic_type):
     images_filtered = []
     width_ls = ['dRA','dDec','dv'] if (mosaic_type == 'spectral' and subimage_dict['dv']) else ['dRA','dDec']
     min_subim, max_subim = [], []
-    hdul = fits.open('{0:s}/{1:s}'.format(input_dir,images[0]))
     for i,width in enumerate(width_ls):
-        crval = subimage_dict['CRVAL{}'.format(i+1)]
         min_subim.append(crval - subimage_dict[width]/2.)
         max_subim.append(crval + subimage_dict[width]/2.)
     for im in images:
@@ -99,6 +99,56 @@ def filter_images_list(images, subimage_dict, input_dir, mosaic_type):
 
     return images_filtered
 
+def filter_images_list_v2(images, subimage_dict, input_dir, mosaic_type):
+
+    images_filtered = []
+    log.info('Selecting images overlapping with the requested area to be mosaicked ...')
+
+    ax_ls = ['1','2','3'] if mosaic_type == 'spectral' else ['1','2']
+#    ax_ls = ['1','2']
+
+    ax_dict = {
+               '1':'dRA',
+               '2':'dDec',
+               '3':'dv'
+               }
+
+    for im in images:
+        with fits.open(os.path.join(input_dir,im)) as hdul:
+            w = WCS(hdul[0].header)
+            RA_cent, Dec_cent = subimage_dict['CRVAL1'], subimage_dict['CRVAL2']
+            z_cent = subimage_dict['CRVAL3'] if subimage_dict['CRVAL3'] else 1
+            for ax in ax_ls:
+                if subimage_dict['CRVAL{}'.format(ax)]:
+                    d = subimage_dict[ax_dict[ax]]/2.
+                    if ax == '1':
+                        min_subim = RA_cent - (d/math.cos(np.deg2rad(Dec_cent)))
+                        max_subim = RA_cent + (d/math.cos(np.deg2rad(Dec_cent)))
+                        min_pix, _, _ = w.wcs_world2pix(min_subim,Dec_cent,z_cent,0)
+                        max_pix, _, _ = w.wcs_world2pix(max_subim,Dec_cent,z_cent,0)
+                    elif ax=='2':
+                        min_subim = Dec_cent - d
+                        max_subim = Dec_cent + d
+                        _, min_pix, _ = w.wcs_world2pix(RA_cent,min_subim,z_cent,0)
+                        _, min_pix, _ = w.wcs_world2pix(RA_cent,max_subim,z_cent,0)
+                    else:
+                        min_subim = z_cent - d
+                        max_subim = z_cent + d
+                        _, _, min_pix = w.wcs_world2pix(RA_cent,Dec_cent,min_subim,0)
+                        _, _, min_pix = w.wcs_world2pix(RA_cent,Dec_cent,max_subim,0)
+
+                    naxis_im = hdul[0].header['NAXIS{}'.format(ax)]
+
+                    if ((min_pix>0) and (min_pix<=naxis_im)) or ((max_pix>0) and (max_pix<=naxis_im)):
+                        overlap = True
+                    else:
+                        overlap = False
+                        break
+            if overlap:
+                images_filtered.append(im)
+
+    return images_filtered
+
 def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname, bitpix, subimage_dict):
                                # image_type should be 'image', 'pb', 'model', or 'residual'
 
@@ -112,7 +162,43 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         montage_projection = 'mProject'
         montage_add = 'mAdd'
 
+    #If velocity/frequency range was specified, create spectral slabs of each image for mosaicking
+    if subimage_dict['CRVAL3'] and mosaic_type == 'spectral':
+        cubes_in = images if image_type != 'pb' else beams
+        log.info('Creating spectral slabs for mosaicking ...')
+        zmin_subim, zmax_subim = subimage_dict['CRVAL3'] - subimage_dict['dv']/2., subimage_dict['CRVAL3'] + subimage_dict['dv']/2.
+        images_z_cut = []
+        for im in cubes_in:
+            with fits.open(os.path.join(input_dir,im)) as hdul:
+                crvalz_im = hdul[0].header['CRVAL3']
+                crpixz_im = hdul[0].header['CRPIX3']
+                cdeltz_im = hdul[0].header['CDELT3']
+                naxisz_im = hdul[0].header['NAXIS3']
+                zmin_im = crvalz_im - (crpixz_im * abs(cdeltz_im))
+                zmax_im = crvalz_im + ((naxisz_im - crpixz_im) * abs(cdeltz_im))
+                im_z = np.arange(zmin_im,zmax_im,cdeltz_im) if cdeltz_im > 0 else np.arange(zmax_im,zmin_im,cdeltz_im)
+
+                min_ind_subim = (np.abs(im_z - zmin_subim)).argmin()
+                max_ind_subim = (np.abs(im_z - zmax_subim)).argmin()
+                inds = [min_ind_subim,max_ind_subim] if cdeltz_im > 0 else [max_ind_subim,min_ind_subim]
+
+                hdul[0].data = hdul[0].data[inds[0]:inds[1],:,:]
+                hdul[0].header['CRPIX3'] = 0
+                hdul[0].header['CRVAL3'] = im_z[inds[0]]
+                hdul[0].header['NAXIS3'] = hdul[0].data.shape[0]
+                im_z_cut = im.replace(image_type,'z_cut_'+image_type)
+                hdul.writeto(os.path.join(input_dir,im_z_cut), overwrite = True)
+                images_z_cut.append(im_z_cut)
+
+        if image_type != 'pb':
+            images = images_z_cut
+            imagesR = [tt.replace('.fits', 'R.fits') for tt in images]
+#        else:
+#            beams = images_z_cut
+#            beamsR = [tt.replace('.fits', 'R.fits') for tt in beams]
+
     if image_type != 'pb':  # i.e. creating a header for 'image', 'model', or 'residual'
+
         log.info('Running montage tasks to create mosaic header ...')
         # Create an image list
         create_montage_list(images, '{0:s}/{1:s}_{2:s}_fields'.format(output_dir,outname,image_type))
@@ -120,37 +206,39 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         # Create mosaic header
         Run('mMakeHdr {0:s}/{1:s}_{2:s}_fields.tbl {0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type))
 
-        if subimage_dict['CRVAL1']:
+        if any(elem is not None for elem in list(subimage_dict.values())[:3]):
             with open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type),'r') as f:
                 data = f.readlines()
 
             width_ls = ['dRA','dDec','dv'] if (mosaic_type == 'spectral' and subimage_dict['dv']) else ['dRA','dDec']
             naxis_new = {}
             for i,width in enumerate(width_ls):
-                for line in data:
-                    if 'CDELT{}'.format(i+1) in line:
-                        cdelt = (abs(float(line.split(' ')[-1])))
-                        break
-                naxis_new['NAXIS{}'.format(i+1)] = (round(subimage_dict[width]/cdelt))
+                if subimage_dict[width]:
+                    for line in data:
+                        if 'CDELT{}'.format(i+1) in line:
+                            cdelt = (abs(float(line.split(' ')[-1])))
+                            break
+                    naxis_new['NAXIS{}'.format(i+1)] = (round(subimage_dict[width]/cdelt))
 
-            ax_ls = ['1','2','3'] if (mosaic_type == 'spectral' and subimage_dict['dv']) else ['1','2']
-            for ax in ax_ls:
-                for i,line in enumerate(data):
-                    key1 = 'CRVAL{}'.format(ax)
-                    key2 = 'NAXIS{}'.format(ax)
-                    key3 = 'CRPIX{}'.format(ax)
-                    if key1 in line:
-                        l = line.split(' ')
-                        l[-1] = '{}\n'.format(subimage_dict[key1])
-                        data[i] = ' '.join(l)
-                    elif key2 in line:
-                        l = line.split(' ')
-                        l[-1] = '{}\n'.format(naxis_new[key2])
-                        data[i] = ' '.join(l)
-                    elif key3 in line:
-                        l = line.split(' ')
-                        l[-1] = '{}\n'.format(naxis_new[key2]/2)
-                        data[i] = ' '.join(l)
+            ax_ls = ['1','2']
+            for i,ax in enumerate(ax_ls):
+                if list(subimage_dict.values())[i]:
+                    for i,line in enumerate(data):
+                        key1 = 'CRVAL{}'.format(ax)
+                        key2 = 'NAXIS{}'.format(ax)
+                        key3 = 'CRPIX{}'.format(ax)
+                        if key1 in line:
+                            l = line.split(' ')
+                            l[-1] = '{}\n'.format(subimage_dict[key1])
+                            data[i] = ' '.join(l)
+                        elif key2 in line:
+                            l = line.split(' ')
+                            l[-1] = '{}\n'.format(naxis_new[key2])
+                            data[i] = ' '.join(l)
+                        elif key3 in line:
+                            l = line.split(' ')
+                            l[-1] = '{}\n'.format(naxis_new[key2]/2)
+                            data[i] = ' '.join(l)
 
             with open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type), 'w') as f:
                 for line in data:
@@ -159,6 +247,8 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         log.info('Running montage tasks to regrid files ...')
         # Reproject the input images
         for cc in images:
+            cmd = montage_projection + ' {0:s}/{1:s} {2:s}/{3:s} {2:s}/{4:s}_{5:s}.hdr'.format(
+                input_dir, cc, output_dir, cc.replace(image_type+'.fits', image_type+'R.fits'), outname, image_type)
             Run(montage_projection + ' {0:s}/{1:s} {2:s}/{3:s} {2:s}/{4:s}_{5:s}.hdr'.format(
                 input_dir, cc, output_dir, cc.replace(image_type+'.fits', image_type+'R.fits'), outname, image_type))
             # CONVERT FROM 64-bit TO 32-bit HERE
@@ -293,7 +383,6 @@ def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff, noise, finit
     """
         update mosaic array
     """
-
     weighted_image_tmp = image_regrid_hdu[0].data
     beam_tmp = beam_regrid_hdu[0].data
     mask = beam_tmp > cutoff
