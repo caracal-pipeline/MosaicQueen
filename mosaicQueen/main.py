@@ -58,7 +58,7 @@ def main(argv):
                              "and this is replaced by 'pb.fits' in order to locate the corresponding beams (which are also required as input).")
     parser.add_argument("-o", "--output", required = True,
                         help="The directory for all output files.")
-    parser.add_argument("-n", "--name", default="mymosaic",
+    parser.add_argument("-n", "--name", required = True,
                         help="The prefix to be used for output files.")
     parser.add_argument("-m", "--mosaic-type", choices= ["spectral", "continuum"], required = True,
                         help="State 'continuum' or 'spectral' as the type of mosaic to be made.")
@@ -88,23 +88,23 @@ def main(argv):
                              "(This is to aid a Gaussian fit to the negative pixel-values.) The default of 0.02 assumes that "
                              "the pixel values are in units of Jy/beam, so a std of ~ 20 mJy/beam).")
     parser.add_argument("-ra", type=float,
-                        help="The RA (in degrees) of the centre of the output image/cube, if the user does not want to image "
-                        "the entire FoV covered by the inputted target/pointing images.")
+                        help="Central RA (in degrees) of the output mosaic image/cube, if the user does not want to image "
+                        "the entire FoV covered by the input images/cubes.")
     parser.add_argument("-dec", type=float,
-                        help="The Dec (in degrees) of the centre of the output image/cube, if the user does not want to image "
-                        "the entire FoV covered by the inputted target/pointing images.")
+                        help="Central Dec (in degrees) of the output mosaic image/cube, if the user does not want to image "
+                        "the entire FoV covered by the input images/cubes.")
     parser.add_argument("-v", "--velocity", type=float,
-                        help="The velocity or frequency (in the appropriate units of the input cube) of the centre of the output "
-                        "cube, if the user does not want to image the entire FoV covered by the inputted target/pointing images.")
+                        help="Central velocity/frequency of the output mosaic cube (in the appropriate units of the input cubes) "
+                        "if the user does not want to image the entire velocity/frequency range covered by the input cubes.")
     parser.add_argument("-dra", type=float,
-                        help="Width of the output image/cube in RA (in degrees), if the user does not want to image "
-                        "the entire FoV covered by the inputted target/pointing images.")
+                        help="RA range of the output mosaic image/cube (in degrees), if the user does not want to image "
+                        "the entire FoV covered by the input images/cubes.")
     parser.add_argument("-ddec", type=float,
-                        help="Height of the output image/cube in Dec (in degrees), if the user does not want to image "
-                        "the entire FoV covered by the inputted target/pointing images.")
+                        help="Dec range of the output mosaic image/cube (in degrees), if the user does not want to image "
+                        "the entire FoV covered by the input images/cubes.")
     parser.add_argument("-dv", type=float,
-                        help="Depth of the output cube in velocity/frequency (in the unit used by the input images), if the user does not want to image "
-                        "the entire FoV covered by the inputted target/pointing images.")
+                        help="Velocity/frequency range of the output mosaic cube (in the unit used by the input images), if the user does not want to image "
+                        "the entire velocity/frequency range covered by the input cubes.")
 
     args = parser.parse_args(argv)
     input_dir = args.input
@@ -151,9 +151,9 @@ def main(argv):
         images = make_mosaic.filter_images_list(images, subimage_dict, input_dir, mosaic_type)
         if not images:
             log.error(
-                "None of the input images overlap with the region requested for mosaicking.")
-            raise LookupError("None of the input images overlap with the region requested for mosaicking.")
-        log.info('Target images overlapping with the requested region to be mosaicked:')
+                "None of the input images overlap with the RA,Dec region requested for mosaicking.")
+            raise LookupError("None of the input images overlap with the RA,Dec region requested for mosaicking.")
+        log.info('Target images overlapping with the RA,Dec region requested for mosaicking:')
         for im in images:
             log.info('    {}'.format(im))
 

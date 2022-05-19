@@ -44,7 +44,7 @@ def create_montage_list(inputfiles, outputfile):
 
 def Run(command, verb1=1, verb2=0, getout=0):
     if verb1:
-        log.info('      '+command)
+        log.info('    '+command)
     result = subprocess.check_output(command.split())
     if verb2:
         for jj in result:
@@ -146,7 +146,7 @@ def create_spectral_slab(images, input_dir, image_type, subimage_dict):
                 raise ValueError("Requested velocity/frequency range falls outside the range of the input cube {}.".format(os.path.join(input_dir,im)))
 
             else:
-                log.info("      {} channels extracted from {}".format(inds[1]-inds[0]+1, im))
+                log.info("    {} channels extracted from {}".format(inds[1]-inds[0]+1, im))
             hdul[0].data = hdul[0].data[inds[0]:inds[1]+1,:,:]
             hdul[0].header['CRPIX3'] = 0
             hdul[0].header['CRVAL3'] = im_z[inds[0]]
@@ -230,7 +230,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
             with fits.open('{0:s}/{1:s}'.format(output_dir, cc.replace(image_type+'.fits', image_type+'R.fits'))) as Rfits:
                 head = Rfits[0].header
                 if head['bitpix'] != -bitpix:
-                    log.info('      Convert from {}-bit to {}-bit ...'.format(np.abs(head['bitpix']), bitpix))
+                    log.info('    Convert from {}-bit to {}-bit ...'.format(np.abs(head['bitpix']), bitpix))
                     head['bitpix'] = -bitpix
                     fits.writeto('{0:s}/{1:s}'.format(output_dir, cc.replace(image_type+'.fits', image_type+'R.fits')), Rfits[0].data.astype(dtype), header=head, overwrite=True)
         # Create a reprojected-image metadata file
@@ -250,7 +250,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
             with fits.open('{0:s}/{1:s}'.format(output_dir, bb.replace('pb.fits', 'pbR.fits'))) as Rfits:
                 head = Rfits[0].header
                 if head['bitpix'] != -bitpix:
-                    log.info('      Convert from {}-bit to {}-bit ...'.format(np.abs(head['bitpix']), bitpix))
+                    log.info('    Convert from {}-bit to {}-bit ...'.format(np.abs(head['bitpix']), bitpix))
                     head['bitpix'] = -bitpix
                     fits.writeto('{0:s}/{1:s}'.format(output_dir, bb.replace('pb.fits', 'pbR.fits')), Rfits[0].data.astype(dtype), header=head, overwrite=True)
         # Create a reprojected-beams metadata file
