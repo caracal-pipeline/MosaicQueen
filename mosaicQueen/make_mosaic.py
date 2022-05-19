@@ -73,40 +73,11 @@ def make_mosaic_header(mosaic_type, t_head):
 # ---------------------------- New/re-structured functions --------------------------------- #
 
 def filter_images_list(images, subimage_dict, input_dir, mosaic_type):
-    images_filtered = []
-    width_ls = ['dRA','dDec','dv'] if (mosaic_type == 'spectral' and subimage_dict['dv']) else ['dRA','dDec']
-    min_subim, max_subim = [], []
-    for i,width in enumerate(width_ls):
-        min_subim.append(crval - subimage_dict[width]/2.)
-        max_subim.append(crval + subimage_dict[width]/2.)
-    for im in images:
-        hdul = fits.open('{0:s}/{1:s}'.format(input_dir,im))
-        for i in range(len((width_ls))):
-            cdelt = abs(hdul[0].header['CDELT{}'.format(i+1)])
-            crval = hdul[0].header['CRVAL{}'.format(i+1)]
-            naxis = hdul[0].header['NAXIS{}'.format(i+1)]
-            crpix = hdul[0].header['CRPIX{}'.format(i+1)]
-            min_im = crval - (crpix*cdelt)
-            max_im = crval + ((naxis-crpix)*cdelt)
-            if (min_im < max_subim[i]) and (min_subim[i] < max_im):
-                overlap = True
-            else:
-                overlap = False
-                break
-
-        if overlap:
-            images_filtered.append(im)
-
-    return images_filtered
-
-def filter_images_list_v2(images, subimage_dict, input_dir, mosaic_type):
 
     images_filtered = []
     log.info('Selecting images overlapping with the requested area to be mosaicked ...')
 
     ax_ls = ['1','2','3'] if mosaic_type == 'spectral' else ['1','2']
-#    ax_ls = ['1','2']
-
     ax_dict = {
                '1':'dRA',
                '2':'dDec',
@@ -116,30 +87,32 @@ def filter_images_list_v2(images, subimage_dict, input_dir, mosaic_type):
     for im in images:
         with fits.open(os.path.join(input_dir,im)) as hdul:
             w = WCS(hdul[0].header)
-            RA_cent, Dec_cent = subimage_dict['CRVAL1'], subimage_dict['CRVAL2']
+            RA_cent = subimage_dict['CRVAL1'] if subimage_dict['CRVAL1'] else hdul[0].header['CRVAL1']
+            Dec_cent = subimage_dict['CRVAL2'] if subimage_dict['CRVAL2'] else hdul[0].header['CRVAL2']
             z_cent = subimage_dict['CRVAL3'] if subimage_dict['CRVAL3'] else 1
             for ax in ax_ls:
                 if subimage_dict['CRVAL{}'.format(ax)]:
                     d = subimage_dict[ax_dict[ax]]/2.
                     if ax == '1':
-                        min_subim = RA_cent - (d/math.cos(np.deg2rad(Dec_cent)))
-                        max_subim = RA_cent + (d/math.cos(np.deg2rad(Dec_cent)))
-                        min_pix, _, _ = w.wcs_world2pix(min_subim,Dec_cent,z_cent,0)
-                        max_pix, _, _ = w.wcs_world2pix(max_subim,Dec_cent,z_cent,0)
+                        cr1_subim = RA_cent - (d/math.cos(np.deg2rad(Dec_cent)))
+                        cr2_subim = RA_cent + (d/math.cos(np.deg2rad(Dec_cent)))
+                        cr1_pix, _, _ = w.wcs_world2pix(cr1_subim,Dec_cent,z_cent,0)
+                        cr2_pix, _, _ = w.wcs_world2pix(cr2_subim,Dec_cent,z_cent,0)
                     elif ax=='2':
-                        min_subim = Dec_cent - d
-                        max_subim = Dec_cent + d
-                        _, min_pix, _ = w.wcs_world2pix(RA_cent,min_subim,z_cent,0)
-                        _, min_pix, _ = w.wcs_world2pix(RA_cent,max_subim,z_cent,0)
+                        cr1_subim = Dec_cent - d
+                        cr2_subim = Dec_cent + d
+                        _, cr1_pix, _ = w.wcs_world2pix(RA_cent,cr1_subim,z_cent,0)
+                        _, cr2_pix, _ = w.wcs_world2pix(RA_cent,cr2_subim,z_cent,0)
                     else:
-                        min_subim = z_cent - d
-                        max_subim = z_cent + d
-                        _, _, min_pix = w.wcs_world2pix(RA_cent,Dec_cent,min_subim,0)
-                        _, _, min_pix = w.wcs_world2pix(RA_cent,Dec_cent,max_subim,0)
+                        cr1_subim = z_cent - d
+                        cr1_subim = z_cent + d
+                        _, _, cr1_pix = w.wcs_world2pix(RA_cent,Dec_cent,cr1_subim,0)
+                        _, _, cr2_pix = w.wcs_world2pix(RA_cent,Dec_cent,cr2_subim,0)
 
                     naxis_im = hdul[0].header['NAXIS{}'.format(ax)]
+                    min_pix, max_pix = min(cr1_pix,cr2_pix), max(cr1_pix,cr2_pix)
 
-                    if ((min_pix>0) and (min_pix<=naxis_im)) or ((max_pix>0) and (max_pix<=naxis_im)):
+                    if ((min_pix<=naxis_im) and (max_pix>0)):
                         overlap = True
                     else:
                         overlap = False
@@ -148,6 +121,42 @@ def filter_images_list_v2(images, subimage_dict, input_dir, mosaic_type):
                 images_filtered.append(im)
 
     return images_filtered
+
+def create_spectral_slab(images, input_dir, image_type, subimage_dict):
+
+    zmin_subim, zmax_subim = subimage_dict['CRVAL3'] - subimage_dict['dv']/2., subimage_dict['CRVAL3'] + subimage_dict['dv']/2.
+    images_z_cut = []
+
+    for im in images:
+        with fits.open(os.path.join(input_dir,im)) as hdul:
+            crvalz_im = hdul[0].header['CRVAL3']
+            crpixz_im = hdul[0].header['CRPIX3']
+            cdeltz_im = hdul[0].header['CDELT3']
+            naxisz_im = hdul[0].header['NAXIS3']
+            z1_im = crvalz_im - (crpixz_im * cdeltz_im)
+            z2_im = crvalz_im + ((naxisz_im - crpixz_im) * cdeltz_im)
+            im_z = np.arange(z1_im,z2_im-cdeltz_im,cdeltz_im)
+
+            ind_subim = [(np.abs(im_z - zmin_subim)).argmin(),(np.abs(im_z - zmax_subim)).argmin()]
+            inds = [min(ind_subim),max(ind_subim)]
+
+            if not ((inds[0]<=naxisz_im) and (inds[1]>0)):
+                log.error(
+                     "Requested velocity/frequency range falls outside the range of the input cube {}.".format(os.path.join(input_dir,im)))
+                raise ValueError("Requested velocity/frequency range falls outside the range of the input cube {}.".format(os.path.join(input_dir,im)))
+
+            hdul[0].data = hdul[0].data[inds[0]:inds[1]+1,:,:]
+            hdul[0].header['CRPIX3'] = 0
+            hdul[0].header['CRVAL3'] = im_z[inds[0]]
+            hdul[0].header['NAXIS3'] = hdul[0].data.shape[0]
+            im_z_cut = im.replace(image_type,'z_cut_'+image_type)
+            hdul.writeto(os.path.join(input_dir,im_z_cut), overwrite = True)
+            images_z_cut.append(im_z_cut)
+
+        images = images_z_cut
+        imagesR = [tt.replace('.fits', 'R.fits') for tt in images]
+
+    return images, imagesR
 
 def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname, bitpix, subimage_dict):
                                # image_type should be 'image', 'pb', 'model', or 'residual'
@@ -162,43 +171,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         montage_projection = 'mProject'
         montage_add = 'mAdd'
 
-    #If velocity/frequency range was specified, create spectral slabs of each image for mosaicking
-    if subimage_dict['CRVAL3'] and mosaic_type == 'spectral':
-        cubes_in = images if image_type != 'pb' else beams
-        log.info('Creating spectral slabs for mosaicking ...')
-        zmin_subim, zmax_subim = subimage_dict['CRVAL3'] - subimage_dict['dv']/2., subimage_dict['CRVAL3'] + subimage_dict['dv']/2.
-        images_z_cut = []
-        for im in cubes_in:
-            with fits.open(os.path.join(input_dir,im)) as hdul:
-                crvalz_im = hdul[0].header['CRVAL3']
-                crpixz_im = hdul[0].header['CRPIX3']
-                cdeltz_im = hdul[0].header['CDELT3']
-                naxisz_im = hdul[0].header['NAXIS3']
-                zmin_im = crvalz_im - (crpixz_im * abs(cdeltz_im))
-                zmax_im = crvalz_im + ((naxisz_im - crpixz_im) * abs(cdeltz_im))
-                im_z = np.arange(zmin_im,zmax_im,cdeltz_im) if cdeltz_im > 0 else np.arange(zmax_im,zmin_im,cdeltz_im)
-
-                min_ind_subim = (np.abs(im_z - zmin_subim)).argmin()
-                max_ind_subim = (np.abs(im_z - zmax_subim)).argmin()
-                inds = [min_ind_subim,max_ind_subim] if cdeltz_im > 0 else [max_ind_subim,min_ind_subim]
-
-                hdul[0].data = hdul[0].data[inds[0]:inds[1],:,:]
-                hdul[0].header['CRPIX3'] = 0
-                hdul[0].header['CRVAL3'] = im_z[inds[0]]
-                hdul[0].header['NAXIS3'] = hdul[0].data.shape[0]
-                im_z_cut = im.replace(image_type,'z_cut_'+image_type)
-                hdul.writeto(os.path.join(input_dir,im_z_cut), overwrite = True)
-                images_z_cut.append(im_z_cut)
-
-        if image_type != 'pb':
-            images = images_z_cut
-            imagesR = [tt.replace('.fits', 'R.fits') for tt in images]
-#        else:
-#            beams = images_z_cut
-#            beamsR = [tt.replace('.fits', 'R.fits') for tt in beams]
-
     if image_type != 'pb':  # i.e. creating a header for 'image', 'model', or 'residual'
-
         log.info('Running montage tasks to create mosaic header ...')
         # Create an image list
         create_montage_list(images, '{0:s}/{1:s}_{2:s}_fields'.format(output_dir,outname,image_type))
