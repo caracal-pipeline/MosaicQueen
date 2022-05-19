@@ -172,7 +172,8 @@ def main(argv):
             modelsR = [tt.replace('image.fits', 'modelR.fits') for tt in images]
             residualsR = [tt.replace('image.fits', 'residualR.fits') for tt in images]
     else:
-        log.info("Will generate a mosaic from the input images. If you would also like mosaics to be made from the associated models and residuals, please re-run with the '--associated-mosaics' argument enabled.")
+        log.info("Will generate a mosaic from the input images.")
+        log.info("If you would also like mosaics to be made from the associated models and residuals, please re-run with the '-a' argument enabled.")
 
     log.info('Checking for images and beams')
     check_for_files(input_dir, images, 'images', args.regrid)  # This raises an error and exits if files are not found

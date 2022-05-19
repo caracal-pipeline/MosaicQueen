@@ -145,6 +145,8 @@ def create_spectral_slab(images, input_dir, image_type, subimage_dict):
                      "Requested velocity/frequency range falls outside the range of the input cube {}.".format(os.path.join(input_dir,im)))
                 raise ValueError("Requested velocity/frequency range falls outside the range of the input cube {}.".format(os.path.join(input_dir,im)))
 
+            else:
+                log.info("      {} channels extracted from {}".format(inds[1]-inds[0]+1, im))
             hdul[0].data = hdul[0].data[inds[0]:inds[1]+1,:,:]
             hdul[0].header['CRPIX3'] = 0
             hdul[0].header['CRVAL3'] = im_z[inds[0]]
