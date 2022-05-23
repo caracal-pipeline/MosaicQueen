@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 requirements = [
 "numpy",
-"futures",
+"pathos",
 "astropy",
 "montage-wrapper",
 "memory-profiler",
