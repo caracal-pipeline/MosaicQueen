@@ -16,14 +16,9 @@ import argparse
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from memory_profiler import profile
+from pathos.multiprocessing import ProcessingPool as Pool
 
 log = mosaicQueen.log
-
-# So that error handling is compatible with Python 2 as well as Python 3
-try:
-    FileNotFoundError
-except NameError:
-    FileNotFoundError = IOError
 
 # -------------------- Edited functions from the original script ------------------------ #
 
@@ -72,7 +67,23 @@ def make_mosaic_header(mosaic_type, t_head):
 
 # ---------------------------- New/re-structured functions --------------------------------- #
 
-def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname, bitpix):
+def reproject(args): 
+    cc, montage_projection, input_dir, output_dir, image_type, outname, bitpix, dtype = args
+    
+    Run(montage_projection + ' {0:s}/{1:s} {2:s}/{3:s} {2:s}/{4:s}_{5:s}.hdr'.format(
+        input_dir, cc, output_dir, cc.replace(image_type+'.fits', image_type+'R.fits'), outname, image_type))
+    # CONVERT FROM 64-bit TO 32-bit HERE
+    with fits.open('{0:s}/{1:s}'.format(output_dir, cc.replace(image_type+'.fits', image_type+'R.fits'))) as Rfits:
+        head = Rfits[0].header
+        if head['bitpix'] != -bitpix:
+            log.info('      Convert from {}-bit to {}-bit ...'.format(np.abs(head['bitpix']), bitpix))
+            head['bitpix'] = -bitpix
+            fits.writeto('{0:s}/{1:s}'.format(output_dir, cc.replace(image_type+'.fits', image_type+'R.fits')), 
+                         Rfits[0].data.astype(dtype), header=head, overwrite=True)
+   
+
+def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname, bitpix, 
+    nworkers=None):
                                # image_type should be 'image', 'pb', 'model', or 'residual'
 
     dtype = f"float{bitpix}"
@@ -80,31 +91,21 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
     # Which montage program is used for regridding depends on whether the image is 2D or 3D
     if mosaic_type == 'spectral':
         montage_projection = 'mProjectCube'
-        montage_add = 'mAddCube'
     elif mosaic_type == 'continuum':
         montage_projection = 'mProject'
-        montage_add = 'mAdd'
 
     if image_type != 'pb':  # i.e. creating a header for 'image', 'model', or 'residual'
         log.info('Running montage tasks to create mosaic header ...')
         # Create an image list
         create_montage_list(images, '{0:s}/{1:s}_{2:s}_fields'.format(output_dir,outname,image_type))
-        #print(sys.stdout)
         Run('mImgtbl -t {0:s}/{1:s}_{2:s}_fields {3:s} {0:s}/{1:s}_{2:s}_fields.tbl'.format(output_dir,outname,image_type,input_dir))
         # Create mosaic header
         Run('mMakeHdr {0:s}/{1:s}_{2:s}_fields.tbl {0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type))
         log.info('Running montage tasks to regrid files ...')
         # Reproject the input images
-        for cc in images:
-            Run(montage_projection + ' {0:s}/{1:s} {2:s}/{3:s} {2:s}/{4:s}_{5:s}.hdr'.format(
-                input_dir, cc, output_dir, cc.replace(image_type+'.fits', image_type+'R.fits'), outname, image_type))
-            # CONVERT FROM 64-bit TO 32-bit HERE
-            with fits.open('{0:s}/{1:s}'.format(output_dir, cc.replace(image_type+'.fits', image_type+'R.fits'))) as Rfits:
-                head = Rfits[0].header
-                if head['bitpix'] != -bitpix:
-                    log.info('      Convert from {}-bit to {}-bit ...'.format(np.abs(head['bitpix']), bitpix))
-                    head['bitpix'] = -bitpix
-                    fits.writeto('{0:s}/{1:s}'.format(output_dir, cc.replace(image_type+'.fits', image_type+'R.fits')), Rfits[0].data.astype(dtype), header=head, overwrite=True)
+        args_i = [(cc, montage_projection, input_dir, output_dir, image_type, outname, bitpix, dtype) for cc in images]
+        futures = Pool.imap(reproject, ) 
+            
         # Create a reprojected-image metadata file
         create_montage_list(imagesR, '{0:s}/{1:s}_{2:s}_fields_regrid'.format(output_dir,outname, image_type))
         Run('mImgtbl -d -t {0:s}/{1:s}_{2:s}_fields_regrid {0:s} {0:s}/{1:s}_{2:s}_fields_regrid.tbl'.format(output_dir,outname,image_type)) # '-d' flag added to aid de-bugging
