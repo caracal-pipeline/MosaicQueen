@@ -5,14 +5,18 @@ from setuptools import setup, find_packages
 
 requirements = [
 "numpy",
+<<<<<<< HEAD
 "pathos",
+=======
+>>>>>>> 1ee236171b66885480b03f027e23e36f4821071d
 "astropy",
-"montage-wrapper",
 "memory-profiler",
+"matplotlib",
+"scipy"
 ]
 
 PACKAGE_NAME = 'mosaic-queen'
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 setup(name = PACKAGE_NAME,
     version = __version__,
@@ -23,7 +27,7 @@ setup(name = PACKAGE_NAME,
     packages = find_packages(),
     install_requires = requirements,
     include_package_data = True,
-    license=["GNU GPL v2"],
+    license="GNU GPL v2",
     scripts = ["bin/" + i for i in os.listdir("bin")],
     classifiers=[
         "Development Status :: 3 - Alpha",

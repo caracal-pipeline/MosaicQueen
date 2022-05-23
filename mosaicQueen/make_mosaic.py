@@ -17,6 +17,8 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from memory_profiler import profile
 from pathos.multiprocessing import ProcessingPool as Pool
+from astropy.wcs import WCS
+import math
 
 log = mosaicQueen.log
 
@@ -37,14 +39,13 @@ def create_montage_list(inputfiles, outputfile):
 
 def Run(command, verb1=1, verb2=0, getout=0):
     if verb1:
-        log.info('      '+command)
+        log.info('    '+command)
     result = subprocess.check_output(command.split())
     if verb2:
         for jj in result:
             log.info(jj)
     if getout:
         return result
-
 
 def make_mosaic_header(mosaic_type, t_head):
     astro_t_head = fits.Header()
@@ -64,7 +65,6 @@ def make_mosaic_header(mosaic_type, t_head):
         astro_t_head[hh] = astro_t_head[hh].replace("'", "")
     return astro_t_head
 
-
 # ---------------------------- New/re-structured functions --------------------------------- #
 
 def reproject(args): 
@@ -82,9 +82,96 @@ def reproject(args):
                          Rfits[0].data.astype(dtype), header=head, overwrite=True)
    
 
+def filter_images_list(images, subimage_dict, input_dir, mosaic_type):
+
+    images_filtered = []
+    log.info('Selecting images overlapping with the requested area to be mosaicked ...')
+
+    ax_ls = ['1','2','3'] if mosaic_type == 'spectral' else ['1','2']
+    ax_dict = {
+               '1':'dRA',
+               '2':'dDec',
+               '3':'dv'
+               }
+
+    for im in images:
+        with fits.open(os.path.join(input_dir,im)) as hdul:
+            w = WCS(hdul[0].header)
+            RA_cent = subimage_dict['CRVAL1'] if subimage_dict['CRVAL1'] else hdul[0].header['CRVAL1']
+            Dec_cent = subimage_dict['CRVAL2'] if subimage_dict['CRVAL2'] else hdul[0].header['CRVAL2']
+            z_cent = subimage_dict['CRVAL3'] if subimage_dict['CRVAL3'] else 1
+            for ax in ax_ls:
+                if subimage_dict['CRVAL{}'.format(ax)]:
+                    d = subimage_dict[ax_dict[ax]]/2.
+                    if ax == '1':
+                        cr1_subim = RA_cent - (d/math.cos(np.deg2rad(Dec_cent)))
+                        cr2_subim = RA_cent + (d/math.cos(np.deg2rad(Dec_cent)))
+                        cr1_pix, _, _ = w.wcs_world2pix(cr1_subim,Dec_cent,z_cent,0)
+                        cr2_pix, _, _ = w.wcs_world2pix(cr2_subim,Dec_cent,z_cent,0)
+                    elif ax=='2':
+                        cr1_subim = Dec_cent - d
+                        cr2_subim = Dec_cent + d
+                        _, cr1_pix, _ = w.wcs_world2pix(RA_cent,cr1_subim,z_cent,0)
+                        _, cr2_pix, _ = w.wcs_world2pix(RA_cent,cr2_subim,z_cent,0)
+                    else:
+                        cr1_subim = z_cent - d
+                        cr1_subim = z_cent + d
+                        _, _, cr1_pix = w.wcs_world2pix(RA_cent,Dec_cent,cr1_subim,0)
+                        _, _, cr2_pix = w.wcs_world2pix(RA_cent,Dec_cent,cr2_subim,0)
+
+                    naxis_im = hdul[0].header['NAXIS{}'.format(ax)]
+                    min_pix, max_pix = min(cr1_pix,cr2_pix), max(cr1_pix,cr2_pix)
+
+                    if ((min_pix<=naxis_im) and (max_pix>0)):
+                        overlap = True
+                    else:
+                        overlap = False
+                        break
+            if overlap:
+                images_filtered.append(im)
+
+    return images_filtered
+
+def create_spectral_slab(images, input_dir, image_type, subimage_dict):
+
+    zmin_subim, zmax_subim = subimage_dict['CRVAL3'] - subimage_dict['dv']/2., subimage_dict['CRVAL3'] + subimage_dict['dv']/2.
+    images_z_cut = []
+
+    for im in images:
+        with fits.open(os.path.join(input_dir,im)) as hdul:
+            crvalz_im = hdul[0].header['CRVAL3']
+            crpixz_im = hdul[0].header['CRPIX3']
+            cdeltz_im = hdul[0].header['CDELT3']
+            naxisz_im = hdul[0].header['NAXIS3']
+            z1_im = crvalz_im - (crpixz_im * cdeltz_im)
+            z2_im = crvalz_im + ((naxisz_im - crpixz_im) * cdeltz_im)
+            im_z = np.arange(z1_im,z2_im-cdeltz_im,cdeltz_im)
+
+            ind_subim = [(np.abs(im_z - zmin_subim)).argmin(),(np.abs(im_z - zmax_subim)).argmin()]
+            inds = [min(ind_subim),max(ind_subim)]
+
+            if not ((inds[0]<=naxisz_im) and (inds[1]>0)):
+                log.error(
+                     "Requested velocity/frequency range falls outside the range of the input cube {}.".format(os.path.join(input_dir,im)))
+                raise ValueError("Requested velocity/frequency range falls outside the range of the input cube {}.".format(os.path.join(input_dir,im)))
+
+            else:
+                log.info("    {} channels extracted from {}".format(inds[1]-inds[0]+1, im))
+            hdul[0].data = hdul[0].data[inds[0]:inds[1]+1,:,:]
+            hdul[0].header['CRPIX3'] = 0
+            hdul[0].header['CRVAL3'] = im_z[inds[0]]
+            hdul[0].header['NAXIS3'] = hdul[0].data.shape[0]
+            im_z_cut = im.replace(image_type,'z_cut_'+image_type)
+            hdul.writeto(os.path.join(input_dir,im_z_cut), overwrite = True)
+            images_z_cut.append(im_z_cut)
+
+        images = images_z_cut
+        imagesR = [tt.replace('.fits', 'R.fits') for tt in images]
+
+    return images, imagesR
+
 def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname, bitpix, 
     nworkers=None):
-                               # image_type should be 'image', 'pb', 'model', or 'residual'
 
     dtype = f"float{bitpix}"
 
@@ -101,10 +188,49 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         Run('mImgtbl -t {0:s}/{1:s}_{2:s}_fields {3:s} {0:s}/{1:s}_{2:s}_fields.tbl'.format(output_dir,outname,image_type,input_dir))
         # Create mosaic header
         Run('mMakeHdr {0:s}/{1:s}_{2:s}_fields.tbl {0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type))
+
+        if any(elem is not None for elem in list(subimage_dict.values())[:3]):
+            with open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type),'r') as f:
+                data = f.readlines()
+
+            width_ls = ['dRA','dDec','dv'] if (mosaic_type == 'spectral' and subimage_dict['dv']) else ['dRA','dDec']
+            naxis_new = {}
+            for i,width in enumerate(width_ls):
+                if subimage_dict[width]:
+                    for line in data:
+                        if 'CDELT{}'.format(i+1) in line:
+                            cdelt = (abs(float(line.split(' ')[-1])))
+                            break
+                    naxis_new['NAXIS{}'.format(i+1)] = (round(subimage_dict[width]/cdelt))
+
+            ax_ls = ['1','2']
+            for i,ax in enumerate(ax_ls):
+                if list(subimage_dict.values())[i]:
+                    for i,line in enumerate(data):
+                        key1 = 'CRVAL{}'.format(ax)
+                        key2 = 'NAXIS{}'.format(ax)
+                        key3 = 'CRPIX{}'.format(ax)
+                        if key1 in line:
+                            l = line.split(' ')
+                            l[-1] = '{}\n'.format(subimage_dict[key1])
+                            data[i] = ' '.join(l)
+                        elif key2 in line:
+                            l = line.split(' ')
+                            l[-1] = '{}\n'.format(naxis_new[key2])
+                            data[i] = ' '.join(l)
+                        elif key3 in line:
+                            l = line.split(' ')
+                            l[-1] = '{}\n'.format(naxis_new[key2]/2)
+                            data[i] = ' '.join(l)
+
+            with open('{0:s}/{1:s}_{2:s}.hdr'.format(output_dir,outname,image_type), 'w') as f:
+                for line in data:
+                    f.write(line)
+
         log.info('Running montage tasks to regrid files ...')
         # Reproject the input images
         args_i = [(cc, montage_projection, input_dir, output_dir, image_type, outname, bitpix, dtype) for cc in images]
-        futures = Pool.imap(reproject, ) 
+        futures = Pool.imap(reproject, args_i) 
             
         # Create a reprojected-image metadata file
         create_montage_list(imagesR, '{0:s}/{1:s}_{2:s}_fields_regrid'.format(output_dir,outname, image_type))
@@ -123,7 +249,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
             with fits.open('{0:s}/{1:s}'.format(output_dir, bb.replace('pb.fits', 'pbR.fits'))) as Rfits:
                 head = Rfits[0].header
                 if head['bitpix'] != -bitpix:
-                    log.info('      Convert from {}-bit to {}-bit ...'.format(np.abs(head['bitpix']), bitpix))
+                    log.info('    Convert from {}-bit to {}-bit ...'.format(np.abs(head['bitpix']), bitpix))
                     head['bitpix'] = -bitpix
                     fits.writeto('{0:s}/{1:s}'.format(output_dir, bb.replace('pb.fits', 'pbR.fits')), Rfits[0].data.astype(dtype), header=head, overwrite=True)
         # Create a reprojected-beams metadata file
@@ -231,7 +357,6 @@ def update_mos(mos, slc, image_regrid_hdu, beam_regrid_hdu, cutoff, noise, finit
     """
         update mosaic array
     """
-
     weighted_image_tmp = image_regrid_hdu[0].data
     beam_tmp = beam_regrid_hdu[0].data
     mask = beam_tmp > cutoff
