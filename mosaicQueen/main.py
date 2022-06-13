@@ -12,6 +12,7 @@ import mosaicQueen
 import os
 import sys
 import glob
+import psutil
 
 log = mosaicQueen.log
 
@@ -58,6 +59,8 @@ def main(argv):
                              "and this is replaced by 'pb.fits' in order to locate the corresponding beams (which are also required as input).")
     parser.add_argument("-o", "--output", required = True,
                         help="The directory for all output files.")
+    parser.add_argument("-j", "--num-workers", type=int, default=0,
+                        help="Number of worker threads. Default=0 means all available threads.")
     parser.add_argument("-n", "--name", required = True,
                         help="The prefix to be used for output files.")
     parser.add_argument("-m", "--mosaic-type", choices= ["spectral", "continuum"], required = True,
@@ -108,6 +111,7 @@ def main(argv):
 
     args = parser.parse_args(argv)
     input_dir = args.input
+    num_workers = args.num_workers
     mosaic_type = args.mosaic_type
     beam_cutoff = args.beam_cutoff
     mosaic_cutoff = args.mosaic_cutoff
@@ -116,7 +120,10 @@ def main(argv):
     sigma_guess = args.guess_std
     outname = args.name
     output_dir = args.output
+
     os.makedirs(output_dir, exist_ok=True)
+    if not num_workers:
+        num_workers = psutil.cpu_count()
 
     subimage_dict = {
         'CRVAL1': args.ra,
@@ -197,9 +204,9 @@ def main(argv):
             beams, beamsR = make_mosaic.create_spectral_slab(beams, input_dir, 'pb', subimage_dict)
             tmp_inputs += images + beams
         make_mosaic.use_montage_for_regridding(
-            input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname, bitpix, subimage_dict)
+            input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname, bitpix, subimage_dict, num_workers)
         make_mosaic.use_montage_for_regridding(
-            input_dir, output_dir, mosaic_type, 'pb', images, imagesR, beams, beamsR, outname, bitpix, subimage_dict)
+            input_dir, output_dir, mosaic_type, 'pb', images, imagesR, beams, beamsR, outname, bitpix, subimage_dict, num_workers)
     elif args.regrid:
         log.info('Checking for regridded images and beams')
         imagesR_dont_exist = check_for_files(output_dir, imagesR, 'regridded images', args.regrid)
@@ -210,7 +217,7 @@ def main(argv):
                 images, imagesR = make_mosaic.create_spectral_slab(images, input_dir, 'image', subimage_dict)
                 tmp_inputs += images
             make_mosaic.use_montage_for_regridding(
-                input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname, bitpix, subimage_dict)
+                input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname, bitpix, subimage_dict, num_workers)
         else:
             log.info('Regridded images are all in place')
         beamsR_dont_exist = check_for_files(output_dir, beamsR, 'regridded beams', args.regrid)
@@ -221,7 +228,7 @@ def main(argv):
                 tmp_inputs += beams
             log.info('Regridded beams are not all in place, so using montage to create them')
             make_mosaic.use_montage_for_regridding(
-                input_dir, output_dir, mosaic_type, 'pb', images, imagesR, beams, beamsR, outname, bitpix, subimage_dict)
+                input_dir, output_dir, mosaic_type, 'pb', images, imagesR, beams, beamsR, outname, bitpix, subimage_dict, num_workers)
         #else:  # redundant
         #    log.info('Regridded beams are all in place')
     else:
@@ -247,9 +254,9 @@ def main(argv):
                 residuals, residualsR = make_mosaic.create_spectral_slab(residuals, input_dir, 'residual', subimage_dict)
                 tmp_inputs += residuals + models
             make_mosaic.use_montage_for_regridding(
-                input_dir, output_dir, mosaic_type, 'model', models, modelsR, beams, beamsR, outname, bitpix, subimage_dict)
+                input_dir, output_dir, mosaic_type, 'model', models, modelsR, beams, beamsR, outname, bitpix, subimage_dict, num_workers)
             make_mosaic.use_montage_for_regridding(
-                input_dir, output_dir, mosaic_type, 'residual', residuals, residualsR, beams, beamsR, outname, bitpix, subimage_dict)
+                input_dir, output_dir, mosaic_type, 'residual', residuals, residualsR, beams, beamsR, outname, bitpix, subimage_dict, num_workers)
         elif args.regrid:
             log.info('Checking for regridded models and residuals')
             modelsR_dont_exist = check_for_files(output_dir, modelsR, 'regridded models', args.regrid)
@@ -260,7 +267,7 @@ def main(argv):
                     models, modelsR = make_mosaic.create_spectral_slab(models, input_dir, 'model', subimage_dict)
                     tmp_inputs += models
                 make_mosaic.use_montage_for_regridding(
-                    input_dir, output_dir, mosaic_type, 'model', models, modelsR, beams, beamsR, outname, bitpix, subimage_dict)
+                    input_dir, output_dir, mosaic_type, 'model', models, modelsR, beams, beamsR, outname, bitpix, subimage_dict, num_workers)
             #else:  # redundant
             #    log.info('Regridded models are all in place')
             residualsR_dont_exist = check_for_files(output_dir, residualsR, 'regridded residuals', args.regrid)
@@ -271,7 +278,7 @@ def main(argv):
                     residuals, residualsR = make_mosaic.create_spectral_slab(residuals, input_dir, 'residual', subimage_dict)
                     tmp_inputs += residuals
                 make_mosaic.use_montage_for_regridding(
-                    input_dir, output_dir, mosaic_type, 'residual', residuals, residualsR, beams, beamsR, outname, bitpix, subimage_dict)
+                    input_dir, output_dir, mosaic_type, 'residual', residuals, residualsR, beams, beamsR, outname, bitpix, subimage_dict, num_workers)
             #else:  # redundant
             #    log.info('Regridded residuals are all in place')
         else:

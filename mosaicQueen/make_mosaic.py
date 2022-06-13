@@ -18,6 +18,7 @@ from scipy.optimize import curve_fit
 from memory_profiler import profile
 from astropy.wcs import WCS
 import math
+import concurrent.futures as cf
 
 log = mosaicQueen.log
 
@@ -50,7 +51,7 @@ def Run(command, verb1=1, verb2=0, getout=0):
         for jj in result:
             log.info(jj)
     if getout:
-        return result
+        return command
 
 def make_mosaic_header(mosaic_type, t_head):
     astro_t_head = fits.Header()
@@ -160,7 +161,7 @@ def create_spectral_slab(images, input_dir, image_type, subimage_dict):
 
     return images, imagesR
 
-def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname, bitpix, subimage_dict):
+def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname, bitpix, subimage_dict, num_workers):
                                # image_type should be 'image', 'pb', 'model', or 'residual'
 
     dtype = f"float{bitpix}"
@@ -219,45 +220,54 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
                 for line in data:
                     f.write(line)
 
-        log.info('Running montage tasks to regrid files ...')
         # Reproject the input images
-        for cc in images:
-            cmd = montage_projection + ' {0:s}/{1:s} {2:s}/{3:s} {2:s}/{4:s}_{5:s}.hdr'.format(
-                input_dir, cc, output_dir, cc.replace(image_type+'.fits', image_type+'R.fits'), outname, image_type)
-            Run(montage_projection + ' {0:s}/{1:s} {2:s}/{3:s} {2:s}/{4:s}_{5:s}.hdr'.format(
-                input_dir, cc, output_dir, cc.replace(image_type+'.fits', image_type+'R.fits'), outname, image_type))
-            # CONVERT FROM 64-bit TO 32-bit HERE
-            with fits.open('{0:s}/{1:s}'.format(output_dir, cc.replace(image_type+'.fits', image_type+'R.fits'))) as Rfits:
-                head = Rfits[0].header
-                if head['bitpix'] != -bitpix:
-                    log.info('    Convert from {}-bit to {}-bit ...'.format(np.abs(head['bitpix']), bitpix))
-                    head['bitpix'] = -bitpix
-                    fits.writeto('{0:s}/{1:s}'.format(output_dir, cc.replace(image_type+'.fits', image_type+'R.fits')), Rfits[0].data.astype(dtype), header=head, overwrite=True)
+        log.info('Running montage tasks to regrid files ...')
+        futures = []
+        with cf.ProcessPoolExecutor(max_workers=num_workers) as executor:
+            for cc in images:
+                cmd = '{0:s} {1:s}/{2:s} {3:s}/{4:s} {3:s}/{5:s}_{6:s}.hdr'.format(
+                       montage_projection, input_dir, cc, output_dir, cc.replace(image_type+'.fits', image_type+'R.fits'), outname, image_type)
+                future = executor.submit(Run, cmd, getout=1)
+                futures.append(future)
+            # Convert bitpix of Montage output FITS (usually 64-bit) to bitpix of input FITS
+            for future in cf.as_completed(futures):
+                ccc = future.result().split()[1].split('/')[-1]
+                cccR = ccc.replace(image_type+'.fits', image_type+'R.fits')
+                with fits.open('{0:s}/{1:s}'.format(output_dir, cccR)) as Rfits:
+                    head = Rfits[0].header
+                    if head['bitpix'] != -bitpix:
+                        log.info('    Convert {} from {}-bit to {}-bit ...'.format(cccR, np.abs(head['bitpix']), bitpix))
+                        head['bitpix'] = -bitpix
+                        fits.writeto('{0:s}/{1:s}'.format(output_dir, cccR), Rfits[0].data.astype(dtype), header=head, overwrite=True)
+
         # Create a reprojected-image metadata file
         create_montage_list(imagesR, '{0:s}/{1:s}_{2:s}_fields_regrid'.format(output_dir,outname, image_type))
         Run('mImgtbl -d -t {0:s}/{1:s}_{2:s}_fields_regrid {0:s} {0:s}/{1:s}_{2:s}_fields_regrid.tbl'.format(output_dir,outname,image_type)) # '-d' flag added to aid de-bugging
-        # Co-add the reprojected images
-        #Run(montage_add + ' -p . {0:s}_{1:s}_fields_regrid.tbl {0:s}_{1:s}.hdr {0:s}.fits'.format(outname,image_type))
 
     else:  # i.e. for image_type == 'pb', to maintain the familiar _beams_regrid filenames
-        log.info('Running montage tasks to regrid beams ...')
         # Reproject the input beams
-        for bb in beams:
-            # Assuming that an image_type == 'image' run of this function was called beforehand
-            Run(montage_projection + ' {0:s}/{1:s} {2:s}/{3:s} {2:s}/{4:s}_image.hdr'.format(
-                input_dir, bb, output_dir, bb.replace('pb.fits', 'pbR.fits'), outname))
-            # CONVERT FROM 64-bit TO 32-bit HERE
-            with fits.open('{0:s}/{1:s}'.format(output_dir, bb.replace('pb.fits', 'pbR.fits'))) as Rfits:
-                head = Rfits[0].header
-                if head['bitpix'] != -bitpix:
-                    log.info('    Convert from {}-bit to {}-bit ...'.format(np.abs(head['bitpix']), bitpix))
-                    head['bitpix'] = -bitpix
-                    fits.writeto('{0:s}/{1:s}'.format(output_dir, bb.replace('pb.fits', 'pbR.fits')), Rfits[0].data.astype(dtype), header=head, overwrite=True)
+        log.info('Running montage tasks to regrid beams ...')
+        futures = []
+        with cf.ProcessPoolExecutor(max_workers=num_workers) as executor:
+            for bb in beams:
+                cmd = '{0:s} {1:s}/{2:s} {3:s}/{4:s} {3:s}/{5:s}_image.hdr'.format(
+                    montage_projection, input_dir, bb, output_dir, bb.replace('pb.fits', 'pbR.fits'), outname)
+                future = executor.submit(Run, cmd, getout=1)
+                futures.append(future)
+            # Convert bitpix of Montage output FITS (usually 64-bit) to bitpix of input FITS
+            for future in cf.as_completed(futures):
+                bbb = future.result().split()[1].split('/')[-1]
+                bbbR = bbb.replace('pb.fits', 'pbR.fits')
+                with fits.open('{0:s}/{1:s}'.format(output_dir, bbbR)) as Rfits:
+                    head = Rfits[0].header
+                    if head['bitpix'] != -bitpix:
+                        log.info('    Convert {} from {}-bit to {}-bit ...'.format(bbbR, np.abs(head['bitpix']), bitpix))
+                        head['bitpix'] = -bitpix
+                        fits.writeto('{0:s}/{1:s}'.format(output_dir, bbbR), Rfits[0].data.astype(dtype), header=head, overwrite=True)
+
         # Create a reprojected-beams metadata file
         create_montage_list(beamsR, '{0:s}/{1:s}_beams_regrid'.format(output_dir,outname))
         Run('mImgtbl -t {0:s}/{1:s}_beams_regrid {0:s} {0:s}/{1:s}_beams_regrid.tbl'.format(output_dir,outname))
-        # Co-add the reprojected beams
-        #Run(montage_add + ' -p . {0:s}_beams_regrid.tbl {0:s}.hdr {0:s}_pb.fits'.format(outname))
 
     return 0
 
