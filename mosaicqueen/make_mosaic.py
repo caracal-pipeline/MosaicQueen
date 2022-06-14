@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
 # ------------------------------------------------------------------------------------------------------
-# Author of package: Sarah White (sarahwhite.astro@gmail.com) and Sphe Makhathini (sphemakh@gmail.com)
-# Based on a mosaicking script by Paolo Serra (paolo.serra@inaf.it)
+# Authors of package: Sarah White (sarahwhite.astro@gmail.com)
+#                     Sphe Makhathini (sphemakh@gmail.com)
+#                     Paolo Serra (paolo.serra@inaf.it)
 # ------------------------------------------------------------------------------------------------------
 
 from astropy.io import fits
@@ -11,7 +12,7 @@ from sys import argv
 import sys
 import os
 import numpy as np
-import mosaicQueen
+import mosaicqueen
 import argparse
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
@@ -20,7 +21,7 @@ from astropy.wcs import WCS
 import math
 import concurrent.futures as cf
 
-log = mosaicQueen.log
+log = mosaicqueen.log
 
 # So that error handling is compatible with Python 2 as well as Python 3
 try:

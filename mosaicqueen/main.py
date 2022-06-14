@@ -6,15 +6,15 @@
 #                     Paolo Serra (paolo.serra@inaf.it)
 # ------------------------------------------------------------------------------------------------------
 
-from mosaicQueen import make_mosaic
+from mosaicqueen import make_mosaic
 from argparse import ArgumentParser
-import mosaicQueen
+import mosaicqueen
 import os
 import sys
 import glob
 import psutil
 
-log = mosaicQueen.log
+log = mosaicqueen.log
 
 # So that error handling is compatible with Python 2 as well as Python 3
 try:
@@ -238,7 +238,7 @@ def main(argv):
         #else:  # redundant
         #    log.info('Regridded beams are all in place')
     else:
-        log.info('User specified neither --force-regrid nor --regrid in the mosaic-queen command')
+        log.info('User specified neither --force-regrid nor --regrid in the mosaicqueen command')
         log.info(
             'Will use mosaic header {0:s}.hdr and regridded images and beams available on disk'.format(outname))
         make_mosaic.final_check_for_files(output_dir, imagesR, beamsR)  # This function raises an error and exits if files are not found
@@ -288,7 +288,7 @@ def main(argv):
             #else:  # redundant
             #    log.info('Regridded residuals are all in place')
         else:
-            log.info('User specified neither --force-regrid nor --regrid in the mosaic-queen command')
+            log.info('User specified neither --force-regrid nor --regrid in the mosaicqueen command')
             log.info(
                 'Will use regridded models and residuals available on disk'.format(outname))
             check_for_files(output_dir, modelsR, 'regridded models', args.regrid)
