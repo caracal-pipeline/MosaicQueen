@@ -407,13 +407,29 @@ def find_lowest_precision(input_dir, images):
 
 def find_naxis(input_dir, images):
     naxis_list = []
+    nlongaxis_list = []
     for image in images:
-        naxis_list.append(fits.getval(os.path.join(input_dir,image), 'naxis'))
+        fitsfile = os.path.join(input_dir,image)
+        if os.path.exists(fitsfile):
+            fitsfile_naxis = fits.getval(fitsfile, 'naxis')
+            fitsfile_nlongaxis = fits.getval(fitsfile, 'naxis')
+            for aa in range(1, fitsfile_naxis+1):
+                if fits.getval(fitsfile, 'naxis{}'.format(aa)) == 1:
+                    fitsfile_nlongaxis-=1
+            naxis_list.append(fitsfile_naxis)
+            nlongaxis_list.append(fitsfile_nlongaxis)
+
     naxis = np.unique(naxis_list)
     if naxis.shape[0] != 1:
         log.error()
-        raise ValueError('Inconsistent NAXIS in input files, found values {}, cannot proceed'.format(naxis_list))
-    return naxis[0]
+        raise ValueError('Inconsistent NAXIS in input files. fFund values {}. Cannot proceed'.format(naxis_list))
+
+    nlongaxis = np.unique(nlongaxis_list)
+    if nlongaxis.shape[0] != 1:
+        log.error()
+        raise ValueError('Inconsistent number of axis with length>1 in input files. Found values {}. Cannot proceed'.format(nlongaxis_list))
+
+    return naxis[0], nlongaxis[0]
 
 
 #@profile

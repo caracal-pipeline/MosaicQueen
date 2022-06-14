@@ -59,12 +59,10 @@ def main(argv):
                              "and this is replaced by 'pb.fits' in order to locate the corresponding beams (which are also required as input).")
     parser.add_argument("-o", "--output", required = True,
                         help="The directory for all output files.")
-    parser.add_argument("-j", "--num-workers", type=int, default=0,
-                        help="Number of worker threads. Default=0 means all available threads.")
     parser.add_argument("-n", "--name", required = True,
                         help="The prefix to be used for output files.")
-    parser.add_argument("-m", "--mosaic-type", choices= ["spectral", "continuum"], required = True,
-                        help="State 'continuum' or 'spectral' as the type of mosaic to be made.")
+    parser.add_argument("-j", "--num-workers", type=int, default=0,
+                        help="Number of worker threads. Default=0 means all available threads.")
     parser.add_argument("-a", "--associated-mosaics", action="store_true",
                         help="Also make mosaics of the associated 'model' and 'residual' .fits files.")
     parser.add_argument("-r", "--regrid", action="store_true",
@@ -112,7 +110,6 @@ def main(argv):
     args = parser.parse_args(argv)
     input_dir = args.input
     num_workers = args.num_workers
-    mosaic_type = args.mosaic_type
     beam_cutoff = args.beam_cutoff
     mosaic_cutoff = args.mosaic_cutoff
     statistic = args.statistic
@@ -148,7 +145,16 @@ def main(argv):
             "Must specify the (2D or 3D) images to be mosaicked.")
         raise LookupError("Must specify the (2D or 3D) images to be mosaicked.")
 
-    # 'R' to signify the regridded versions of the different .fits files
+    # check NAXIS and NAXISi of input FITS files to decide whether to follow the 2D or 3D mosaic workflow
+    naxis, nlongaxis = make_mosaic.find_naxis(input_dir, images)
+    if nlongaxis == 2:
+        mosaic_type = 'continuum'
+    elif nlongaxis == 3:
+        mosaic_type = 'spectral'
+    else:
+        log.error('The number of non-trivial axes in the Input FITS files is {} but must be 2 or 3 for MosaicQueen to work. Aborting.'.format(nlongaxis))
+
+    # remove from input image list those images that do not fall within the requested RA,Dec region
     if subimage_dict['CRVAL1'] or subimage_dict['CRVAL2']:
         images = make_mosaic.filter_images_list(images, subimage_dict, input_dir, mosaic_type)
         if not images:
@@ -191,9 +197,8 @@ def main(argv):
         check_for_files(input_dir, models, 'models', args.regrid)  # This raises an error and exits if files are not found
         check_for_files(input_dir, residuals, 'residuals', args.regrid)  # This raises an error and exits if files are not found
 
-    # Check here BITPIX and NAXIS of input images
+    # Check BITPIX of input images
     bitpix = make_mosaic.find_lowest_precision(input_dir, images)
-    naxis = make_mosaic.find_naxis(input_dir, images)
 
     tmp_inputs = []
 
