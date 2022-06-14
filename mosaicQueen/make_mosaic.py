@@ -161,7 +161,7 @@ def create_spectral_slab(images, input_dir, image_type, subimage_dict):
 
     return images, imagesR
 
-def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname, bitpix, subimage_dict, num_workers):
+def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname, bitpix, naxis, subimage_dict, num_workers):
                                # image_type should be 'image', 'pb', 'model', or 'residual'
 
     dtype = f"float{bitpix}"
@@ -229,15 +229,22 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
                        montage_projection, input_dir, cc, output_dir, cc.replace(image_type+'.fits', image_type+'R.fits'), outname, image_type)
                 future = executor.submit(Run, cmd, getout=1)
                 futures.append(future)
-            # Convert bitpix of Montage output FITS (usually 64-bit) to bitpix of input FITS
+            # Convert bitpix & change naxis of Montage output FITS (usually 64-bit) to bitpix & naxis of input FITS
             for future in cf.as_completed(futures):
                 ccc = future.result().split()[1].split('/')[-1]
                 cccR = ccc.replace(image_type+'.fits', image_type+'R.fits')
                 with fits.open('{0:s}/{1:s}'.format(output_dir, cccR)) as Rfits:
                     head = Rfits[0].header
+                    modified_head = False
                     if head['bitpix'] != -bitpix:
                         log.info('    Convert {} from {}-bit to {}-bit ...'.format(cccR, np.abs(head['bitpix']), bitpix))
                         head['bitpix'] = -bitpix
+                        modified_head = True
+                    if head['naxis'] != naxis:
+                        log.info('    Change NAXIS in {} from {} to {} ...'.format(cccR, head['naxis'], naxis))
+                        head['naxis'] = naxis
+                        modified_head = True
+                    if modified_head:
                         fits.writeto('{0:s}/{1:s}'.format(output_dir, cccR), Rfits[0].data.astype(dtype), header=head, overwrite=True)
 
         # Create a reprojected-image metadata file
@@ -260,9 +267,16 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
                 bbbR = bbb.replace('pb.fits', 'pbR.fits')
                 with fits.open('{0:s}/{1:s}'.format(output_dir, bbbR)) as Rfits:
                     head = Rfits[0].header
+                    modified_head = False
                     if head['bitpix'] != -bitpix:
                         log.info('    Convert {} from {}-bit to {}-bit ...'.format(bbbR, np.abs(head['bitpix']), bitpix))
                         head['bitpix'] = -bitpix
+                        modified_head = True
+                    if head['naxis'] != naxis:
+                        log.info('    Change NAXIS in {} from {} to {} ...'.format(bbbR, head['naxis'], naxis))
+                        head['naxis'] = naxis
+                        modified_head = True
+                    if modified_head:
                         fits.writeto('{0:s}/{1:s}'.format(output_dir, bbbR), Rfits[0].data.astype(dtype), header=head, overwrite=True)
 
         # Create a reprojected-beams metadata file
@@ -389,6 +403,17 @@ def find_lowest_precision(input_dir, images):
     bitpix = min(bitpix_list)
 
     return bitpix
+
+
+def find_naxis(input_dir, images):
+    naxis_list = []
+    for image in images:
+        naxis_list.append(fits.getval(os.path.join(input_dir,image), 'naxis'))
+    naxis = np.unique(naxis_list)
+    if naxis.shape[0] != 1:
+        log.error()
+        raise ValueError('Inconsistent NAXIS in input files, found values {}, cannot proceed'.format(naxis_list))
+    return naxis[0]
 
 
 #@profile

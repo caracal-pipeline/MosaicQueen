@@ -145,13 +145,8 @@ def main(argv):
             log.info('    {}'.format(im))
     else:
         log.error(
-            "Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
-        raise LookupError("Must specify the (2D or 3D) images to be mosaicked, each prefixed by '-t '.")
-
-    if (mosaic_type == 'spectral') and (args.velocity and not args.dv):
-        log.error(
-            "Must define a cube size along the z-axis ('-dv'), if a mosaic central coordinate along this axis was requested ('-v').")
-        raise LookupError("Must define a cube size along the z-axis ('-dv'), if a mosaic central coordinate along this axis was requested ('-v').")
+            "Must specify the (2D or 3D) images to be mosaicked.")
+        raise LookupError("Must specify the (2D or 3D) images to be mosaicked.")
 
     # 'R' to signify the regridded versions of the different .fits files
     if subimage_dict['CRVAL1'] or subimage_dict['CRVAL2']:
@@ -163,6 +158,11 @@ def main(argv):
         log.info('Target images overlapping with the RA,Dec region requested for mosaicking:')
         for im in images:
             log.info('    {}'.format(im))
+
+    if (mosaic_type == 'spectral') and (args.velocity and not args.dv):
+        log.error(
+            "Must define a cube size along the z-axis ('-dv'), if a mosaic central coordinate along this axis was requested ('-v').")
+        raise LookupError("Must define a cube size along the z-axis ('-dv'), if a mosaic central coordinate along this axis was requested ('-v').")
 
     imagesR = [tt.replace('image.fits', 'imageR.fits') for tt in images]
     beams = [tt.replace('image.fits', 'pb.fits') for tt in images]
@@ -191,8 +191,9 @@ def main(argv):
         check_for_files(input_dir, models, 'models', args.regrid)  # This raises an error and exits if files are not found
         check_for_files(input_dir, residuals, 'residuals', args.regrid)  # This raises an error and exits if files are not found
 
-    # Check here BITPIX of input images
+    # Check here BITPIX and NAXIS of input images
     bitpix = make_mosaic.find_lowest_precision(input_dir, images)
+    naxis = make_mosaic.find_naxis(input_dir, images)
 
     tmp_inputs = []
 
@@ -204,9 +205,9 @@ def main(argv):
             beams, beamsR = make_mosaic.create_spectral_slab(beams, input_dir, 'pb', subimage_dict)
             tmp_inputs += images + beams
         make_mosaic.use_montage_for_regridding(
-            input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname, bitpix, subimage_dict, num_workers)
+            input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname, bitpix, naxis, subimage_dict, num_workers)
         make_mosaic.use_montage_for_regridding(
-            input_dir, output_dir, mosaic_type, 'pb', images, imagesR, beams, beamsR, outname, bitpix, subimage_dict, num_workers)
+            input_dir, output_dir, mosaic_type, 'pb', images, imagesR, beams, beamsR, outname, bitpix, naxis, subimage_dict, num_workers)
     elif args.regrid:
         log.info('Checking for regridded images and beams')
         imagesR_dont_exist = check_for_files(output_dir, imagesR, 'regridded images', args.regrid)
@@ -217,7 +218,7 @@ def main(argv):
                 images, imagesR = make_mosaic.create_spectral_slab(images, input_dir, 'image', subimage_dict)
                 tmp_inputs += images
             make_mosaic.use_montage_for_regridding(
-                input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname, bitpix, subimage_dict, num_workers)
+                input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname, bitpix, naxis, subimage_dict, num_workers)
         else:
             log.info('Regridded images are all in place')
         beamsR_dont_exist = check_for_files(output_dir, beamsR, 'regridded beams', args.regrid)
@@ -228,7 +229,7 @@ def main(argv):
                 tmp_inputs += beams
             log.info('Regridded beams are not all in place, so using montage to create them')
             make_mosaic.use_montage_for_regridding(
-                input_dir, output_dir, mosaic_type, 'pb', images, imagesR, beams, beamsR, outname, bitpix, subimage_dict, num_workers)
+                input_dir, output_dir, mosaic_type, 'pb', images, imagesR, beams, beamsR, outname, bitpix, naxis, subimage_dict, num_workers)
         #else:  # redundant
         #    log.info('Regridded beams are all in place')
     else:
@@ -254,9 +255,9 @@ def main(argv):
                 residuals, residualsR = make_mosaic.create_spectral_slab(residuals, input_dir, 'residual', subimage_dict)
                 tmp_inputs += residuals + models
             make_mosaic.use_montage_for_regridding(
-                input_dir, output_dir, mosaic_type, 'model', models, modelsR, beams, beamsR, outname, bitpix, subimage_dict, num_workers)
+                input_dir, output_dir, mosaic_type, 'model', models, modelsR, beams, beamsR, outname, bitpix, naxis, subimage_dict, num_workers)
             make_mosaic.use_montage_for_regridding(
-                input_dir, output_dir, mosaic_type, 'residual', residuals, residualsR, beams, beamsR, outname, bitpix, subimage_dict, num_workers)
+                input_dir, output_dir, mosaic_type, 'residual', residuals, residualsR, beams, beamsR, outname, bitpix, naxis, subimage_dict, num_workers)
         elif args.regrid:
             log.info('Checking for regridded models and residuals')
             modelsR_dont_exist = check_for_files(output_dir, modelsR, 'regridded models', args.regrid)
@@ -267,7 +268,7 @@ def main(argv):
                     models, modelsR = make_mosaic.create_spectral_slab(models, input_dir, 'model', subimage_dict)
                     tmp_inputs += models
                 make_mosaic.use_montage_for_regridding(
-                    input_dir, output_dir, mosaic_type, 'model', models, modelsR, beams, beamsR, outname, bitpix, subimage_dict, num_workers)
+                    input_dir, output_dir, mosaic_type, 'model', models, modelsR, beams, beamsR, outname, bitpix, naxis, subimage_dict, num_workers)
             #else:  # redundant
             #    log.info('Regridded models are all in place')
             residualsR_dont_exist = check_for_files(output_dir, residualsR, 'regridded residuals', args.regrid)
@@ -278,7 +279,7 @@ def main(argv):
                     residuals, residualsR = make_mosaic.create_spectral_slab(residuals, input_dir, 'residual', subimage_dict)
                     tmp_inputs += residuals
                 make_mosaic.use_montage_for_regridding(
-                    input_dir, output_dir, mosaic_type, 'residual', residuals, residualsR, beams, beamsR, outname, bitpix, subimage_dict, num_workers)
+                    input_dir, output_dir, mosaic_type, 'residual', residuals, residualsR, beams, beamsR, outname, bitpix, naxis, subimage_dict, num_workers)
             #else:  # redundant
             #    log.info('Regridded residuals are all in place')
         else:
