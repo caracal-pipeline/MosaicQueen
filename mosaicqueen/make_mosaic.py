@@ -221,8 +221,24 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
                 for line in data:
                     f.write(line)
 
+        log.info('Running montage tasks to regrid images ...')
+        # Montage's mProjectCube does not work when there is a 4th axis. If it is there we remove it temporarily.
+        removed_keys = {}
+        for cc in images:
+            removed_keys[cc] = {}
+            if mosaic_type == 'spectral':
+                with fits.open('{0:s}/{1:s}'.format(input_dir, cc)) as infits:
+                    inhead = infits[0].header
+                    if inhead['naxis'] == 4:
+                        log.info('    Temporarily removing 4th axis from {}'.format(cc))
+                        for hh in 'naxis4 crpix4 crval4 cdelt4 ctype4 cunit4'.split():
+                            if hh in inhead:
+                                removed_keys[cc][hh] = inhead[hh]
+                                del(inhead[hh])
+                        inhead['naxis'] = 3
+                        fits.writeto('{0:s}/{1:s}'.format(input_dir, cc), infits[0].data[0], header=inhead, overwrite=True)
+
         # Reproject the input images
-        log.info('Running montage tasks to regrid files ...')
         futures = []
         with cf.ProcessPoolExecutor(max_workers=num_workers) as executor:
             for cc in images:
@@ -230,31 +246,61 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
                        montage_projection, input_dir, cc, output_dir, cc.replace(image_type+'.fits', image_type+'R.fits'), outname, image_type)
                 future = executor.submit(Run, cmd, getout=1)
                 futures.append(future)
-            # Convert bitpix & change naxis of Montage output FITS (usually 64-bit) to bitpix & naxis of input FITS
+            # Add 4th axis back if it was removed; convert bitpix & change naxis of Montage output FITS (usually 64-bit) to bitpix & naxis of input FITS
             for future in cf.as_completed(futures):
                 ccc = future.result().split()[1].split('/')[-1]
+                if len(removed_keys[ccc]):
+                    with fits.open('{0:s}/{1:s}'.format(input_dir, ccc)) as Rfits:
+                        head = Rfits[0].header
+                        log.info('    Adding 4th axis back in {}'.format(ccc))
+                        Rfits[0].data = np.expand_dims(Rfits[0].data, 0)
+                        for hh in removed_keys[ccc]:
+                            head[hh] = removed_keys[ccc][hh]
+                        fits.writeto('{0:s}/{1:s}'.format(input_dir, ccc), Rfits[0].data, header=head, overwrite=True)
+
                 cccR = ccc.replace(image_type+'.fits', image_type+'R.fits')
                 with fits.open('{0:s}/{1:s}'.format(output_dir, cccR)) as Rfits:
-                    head = Rfits[0].header
                     modified_head = False
-                    if head['bitpix'] != -bitpix:
-                        log.info('    Convert {} from {}-bit to {}-bit ...'.format(cccR, np.abs(head['bitpix']), bitpix))
-                        head['bitpix'] = -bitpix
+                    if Rfits[0].header['naxis'] != naxis:
+                        log.info('    Changing NAXIS from {} to {} for {}'.format(Rfits[0].header['naxis'], naxis, cccR))
+                        while Rfits[0].header['naxis'] < naxis:
+                            Rfits[0].data = np.expand_dims(Rfits[0].data, 0)
                         modified_head = True
-                    if head['naxis'] != naxis:
-                        log.info('    Change NAXIS in {} from {} to {} ...'.format(cccR, head['naxis'], naxis))
-                        head['naxis'] = naxis
+                    if len(removed_keys[ccc]):
+                        log.info('    Adding 4th axis keys to {}'.format(cccR))
+                        for hh in removed_keys[ccc]:
+                            Rfits[0].header[hh] = removed_keys[ccc][hh]
+                        modified_head = True
+                    if Rfits[0].header['bitpix'] != -bitpix:
+                        log.info('    Converting from {}-bit to {}-bit for {}'.format(np.abs(Rfits[0].header['bitpix']), bitpix, cccR))
+                        Rfits[0].header['bitpix'] = -bitpix
                         modified_head = True
                     if modified_head:
-                        fits.writeto('{0:s}/{1:s}'.format(output_dir, cccR), Rfits[0].data.astype(dtype), header=head, overwrite=True)
+                        fits.writeto('{0:s}/{1:s}'.format(output_dir, cccR), Rfits[0].data.astype(dtype), header=Rfits[0].header, overwrite=True)
 
         # Create a reprojected-image metadata file
         create_montage_list(imagesR, '{0:s}/{1:s}_{2:s}_fields_regrid'.format(output_dir,outname, image_type))
         Run('mImgtbl -d -t {0:s}/{1:s}_{2:s}_fields_regrid {0:s} {0:s}/{1:s}_{2:s}_fields_regrid.tbl'.format(output_dir,outname,image_type)) # '-d' flag added to aid de-bugging
 
     else:  # i.e. for image_type == 'pb', to maintain the familiar _beams_regrid filenames
-        # Reproject the input beams
         log.info('Running montage tasks to regrid beams ...')
+        # Montage's mProjectCube does not work when there is a 4th axis. If it is there we remove it temporarily.
+        removed_keys = {}
+        for bb in beams:
+            removed_keys[bb] = {}
+            if mosaic_type == 'spectral':
+                with fits.open('{0:s}/{1:s}'.format(input_dir, bb)) as infits:
+                    inhead = infits[0].header
+                    if inhead['naxis'] == 4:
+                        log.info('    Temporarily removing 4th axis from {}'.format(bb))
+                        for hh in 'naxis4 crpix4 crval4 cdelt4 ctype4 cunit4'.split():
+                            if hh in inhead:
+                                removed_keys[bb][hh] = inhead[hh]
+                                del(inhead[hh])
+                        inhead['naxis'] = 3
+                        fits.writeto('{0:s}/{1:s}'.format(input_dir, bb), infits[0].data[0], header=inhead, overwrite=True)
+
+        # Reproject the input beams
         futures = []
         with cf.ProcessPoolExecutor(max_workers=num_workers) as executor:
             for bb in beams:
@@ -262,23 +308,37 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
                     montage_projection, input_dir, bb, output_dir, bb.replace('pb.fits', 'pbR.fits'), outname)
                 future = executor.submit(Run, cmd, getout=1)
                 futures.append(future)
-            # Convert bitpix of Montage output FITS (usually 64-bit) to bitpix of input FITS
+            # Add 4th axis back if it was removed; convert bitpix of Montage output FITS (usually 64-bit) to bitpix of input FITS
             for future in cf.as_completed(futures):
                 bbb = future.result().split()[1].split('/')[-1]
+                if len(removed_keys[bbb]):
+                    with fits.open('{0:s}/{1:s}'.format(input_dir, bbb)) as Rfits:
+                        head = Rfits[0].header
+                        log.info('    Adding 4th axis back in {}'.format(bbb))
+                        Rfits[0].data = np.expand_dims(Rfits[0].data, 0)
+                        for hh in removed_keys[bbb]:
+                            head[hh] = removed_keys[bbb][hh]
+                        fits.writeto('{0:s}/{1:s}'.format(input_dir, bbb), Rfits[0].data, header=head, overwrite=True)
+
                 bbbR = bbb.replace('pb.fits', 'pbR.fits')
                 with fits.open('{0:s}/{1:s}'.format(output_dir, bbbR)) as Rfits:
-                    head = Rfits[0].header
                     modified_head = False
-                    if head['bitpix'] != -bitpix:
-                        log.info('    Convert {} from {}-bit to {}-bit ...'.format(bbbR, np.abs(head['bitpix']), bitpix))
-                        head['bitpix'] = -bitpix
+                    if Rfits[0].header['naxis'] != naxis:
+                        log.info('    Changing NAXIS from {} to {} for {}'.format(Rfits[0].header['naxis'], naxis, bbbR))
+                        while Rfits[0].header['naxis'] < naxis:
+                            Rfits[0].data = np.expand_dims(Rfits[0].data, 0)
                         modified_head = True
-                    if head['naxis'] != naxis:
-                        log.info('    Change NAXIS in {} from {} to {} ...'.format(bbbR, head['naxis'], naxis))
-                        head['naxis'] = naxis
+                    if len(removed_keys[bbb]):
+                        log.info('    Adding 4th axis keys to {}'.format(bbbR))
+                        for hh in removed_keys[bbb]:
+                            Rfits[0].header[hh] = removed_keys[bbb][hh]
+                        modified_head = True
+                    if Rfits[0].header['bitpix'] != -bitpix:
+                        log.info('    Converting from {}-bit to {}-bit for {}'.format(np.abs(Rfits[0].header['bitpix']), bitpix, bbbR))
+                        Rfits[0].header['bitpix'] = -bitpix
                         modified_head = True
                     if modified_head:
-                        fits.writeto('{0:s}/{1:s}'.format(output_dir, bbbR), Rfits[0].data.astype(dtype), header=head, overwrite=True)
+                        fits.writeto('{0:s}/{1:s}'.format(output_dir, bbbR), Rfits[0].data.astype(dtype), header=Rfits[0].header, overwrite=True)
 
         # Create a reprojected-beams metadata file
         create_montage_list(beamsR, '{0:s}/{1:s}_beams_regrid'.format(output_dir,outname))
@@ -434,7 +494,7 @@ def find_naxis(input_dir, images):
 
 
 #@profile
-def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, uwei, statistic, sigma_guess, images, mos_cutoff, bitpix, all_noise_estimates=[]):
+def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, uwei, statistic, sigma_guess, images, mos_cutoff, bitpix, naxis, all_noise_estimates=[]):
 
 
     log.info("Creating a mosaic from '{0:s}' files ...".format(image_type))
@@ -452,9 +512,17 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
 
     # Initialise zero-valued mosaic and normalisation arrays
     if mosaic_type == 'spectral':
-        shape = ((int(moshead['NAXIS3']), int(moshead['NAXIS2']), int(moshead['NAXIS1'])))
+        if naxis == 4:
+            shape = ((1, int(moshead['NAXIS3']), int(moshead['NAXIS2']), int(moshead['NAXIS1'])))
+        elif naxis == 3:
+            shape = ((int(moshead['NAXIS3']), int(moshead['NAXIS2']), int(moshead['NAXIS1'])))
     if mosaic_type == 'continuum':
-        shape = (int(moshead['NAXIS2']), int(moshead['NAXIS1']))
+        if naxis == 4:
+            shape = (1, 1, int(moshead['NAXIS2']), int(moshead['NAXIS1']))
+        elif naxis == 3:
+            shape = (1, int(moshead['NAXIS2']), int(moshead['NAXIS1']))
+        elif naxis == 2:
+            shape = (int(moshead['NAXIS2']), int(moshead['NAXIS1']))
 
     mos_array = np.zeros(shape, dtype=dtype)
     norm_array = np.zeros(shape, dtype=dtype)
@@ -493,9 +561,17 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
         x1 = int(float(moshead['CRPIX1']) - head['CRPIX1'])
         x2 = int(float(moshead['CRPIX1']) - head['CRPIX1'] + head['NAXIS1'])
         if mosaic_type == 'spectral':
-            slc = slice(None), slice(y1,y2), slice(x1,x2)
+            if naxis == 4:
+                slc = slice(None), slice(None), slice(y1,y2), slice(x1,x2)
+            elif naxis == 3:
+                slc = slice(None), slice(y1,y2), slice(x1,x2)
         elif mosaic_type == 'continuum':
-            slc = slice(y1,y2), slice(x1,x2)
+            if naxis == 4:
+                slc = slice(None), slice(None), slice(y1,y2), slice(x1,x2)
+            elif naxis == 3:
+                slc = slice(None), slice(y1,y2), slice(x1,x2)
+            elif naxis == 2:
+                slc = slice(y1,y2), slice(x1,x2)
 
         # Add the regridded input array with appropriate weights
         update_norm(norm_array, slc, beam_regrid_hdu, cutoff, ss)
@@ -517,6 +593,8 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
     # Fixing mosaic header (add missing keys that exist in the original input cubes but not yet in the mosaic cube)
     # Header keys which should be identical in all input cubes (if not, we take the first one)
     single_keys = [
+                   'ctype3',
+                   'ctype4',
                    'bunit',
                    'specsys',
                    'specsys3',
@@ -558,11 +636,12 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
 
     # Tidying up and writing
     moshead = make_mosaic_header(mosaic_type, moshead)
-    if mosaic_type == 'spectral':
-        f = fits.open(input_dir+'/'+images[0])
-        zhead = f[0].header
-        moshead['ctype3'] = zhead['ctype3']
-        f.close()
+#    with fits.open(input_dir+'/'+images[0]) as im0:
+#        head0 = im0[0].header
+#        if 'ctype3' in head0:
+#            moshead['ctype3'] = head0['ctype3']
+#        if 'ctype4' in head0:
+#            moshead['ctype4'] = head0['ctype4']
     fits.writeto('{0:s}/{1:s}_{2:s}.fits'.format(output_dir,outname,image_type), mos_array /
                  norm_array, overwrite=True, header=moshead)
 
