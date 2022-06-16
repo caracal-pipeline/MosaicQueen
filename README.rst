@@ -1,5 +1,5 @@
 =============
-mosaicQueen
+MosaicQueen
 =============
 
 |Pypi Version|
@@ -16,15 +16,15 @@ First install montage via
   
     sudo apt install montage
 
-Package is available on PyPI (https://pypi.org/project/mosaic-queen) and so it is installable via
+Package is available on PyPI (https://pypi.org/project/mosaicqueen) and so it is installable via
 
 .. code-block:: bash
   
-    pip install mosaic-queen
+    pip install mosaicqueen
 
 
 Work in progress: convolution of input images to a common synthesised beam before mosaicking, and employing parallel processing to speed this up...
 
-.. |Pypi Version| image:: https://img.shields.io/pypi/v/mosaic-queen.svg
-                  :target: https://pypi.org/project/mosaic-queen/
+.. |Pypi Version| image:: https://img.shields.io/pypi/v/mosaicqueen.svg
+                  :target: https://pypi.org/project/mosaicqueen/
                   :alt:

@@ -11,8 +11,8 @@ requirements = [
 "scipy"
 ]
 
-PACKAGE_NAME = 'mosaic-queen'
-__version__ = '1.0.2'
+PACKAGE_NAME = 'mosaicqueen'
+__version__ = '1.1.0'
 
 setup(name = PACKAGE_NAME,
     version = __version__,
