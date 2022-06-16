@@ -23,7 +23,6 @@ setup(name = PACKAGE_NAME,
     packages = find_packages(),
     install_requires = requirements,
     include_package_data = True,
-    license="GNU GPL v2",
     scripts = ["bin/" + i for i in os.listdir("bin")],
     classifiers=[
         "Development Status :: 3 - Alpha",
