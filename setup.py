@@ -19,13 +19,13 @@ def readme():
         return f.read()
 
 PACKAGE_NAME = 'mosaic-queen'
-__version__ = '1.1.0'
+__version__ = '1.1.1'
 
 setup(name = PACKAGE_NAME,
     version = __version__,
     description = "A package with mosaicking commands from montage",
     long_description = readme(),
-    long_description_content_type="text/rst",
+    long_description_content_type="text/x-rst",
     author = "Sarah White and CaraCal pipeline tean",
     author_email = "sarahwhite.astro@gmail.com",
     url = "https://github.com/caracal-pipeline/MosaicQueen",
