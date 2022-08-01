@@ -124,7 +124,7 @@ def filter_images_list(images, subimage_dict, input_dir, mosaic_type):
 
     return images_filtered
 
-def create_spectral_slab(images, input_dir, image_type, subimage_dict):
+def create_spectral_slab(images, input_dir, outname, image_type, subimage_dict):
 
     zmin_subim, zmax_subim = subimage_dict['CRVAL3'] - subimage_dict['dv']/2., subimage_dict['CRVAL3'] + subimage_dict['dv']/2.
     images_z_cut = []
@@ -153,7 +153,7 @@ def create_spectral_slab(images, input_dir, image_type, subimage_dict):
             hdul[0].header['CRPIX3'] = 0
             hdul[0].header['CRVAL3'] = im_z[inds[0]]
             hdul[0].header['NAXIS3'] = hdul[0].data.shape[0]
-            im_z_cut = im.replace(image_type,'z_cut_'+image_type)
+            im_z_cut = outname+'_'+im.replace(image_type,'z_cut_'+image_type)
             hdul.writeto(os.path.join(input_dir,im_z_cut), overwrite = True)
             images_z_cut.append(im_z_cut)
 
