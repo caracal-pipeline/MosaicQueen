@@ -13,6 +13,7 @@ import os
 import sys
 import glob
 import psutil
+import tracemalloc
 
 log = mosaicqueen.log
 
