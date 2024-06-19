@@ -13,6 +13,7 @@ import os
 import sys
 import glob
 import psutil
+import tracemalloc
 
 log = mosaicqueen.log
 
@@ -206,9 +207,11 @@ def main(argv):
         log.info('You have asked for all regridded files to be created by this run, even if they are already on disk')
         if subimage_dict['CRVAL3'] and mosaic_type == 'spectral' and (args.force_regrid or args.regrid):
             log.info('Creating spectral slabs for mosaicking ...')
-            images, imagesR = make_mosaic.create_spectral_slab(images, input_dir, 'image', subimage_dict)
-            beams, beamsR = make_mosaic.create_spectral_slab(beams, input_dir, 'pb', subimage_dict)
+            images, imagesR = make_mosaic.create_spectral_slab(images, input_dir, outname, 'image', subimage_dict)
+            beams, beamsR = make_mosaic.create_spectral_slab(beams, input_dir, outname, 'pb', subimage_dict)
             tmp_inputs += images + beams
+            print(tmp_inputs)
+            log.info('Files we plan to delete later so far are: {}'.format(tmp_inputs))
         make_mosaic.use_montage_for_regridding(
             input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname, bitpix, naxis, subimage_dict, num_workers)
         make_mosaic.use_montage_for_regridding(
@@ -220,7 +223,7 @@ def main(argv):
             log.info('Regridded images are not all in place, so using montage to create them')
             if subimage_dict['CRVAL3'] and mosaic_type == 'spectral' and (args.force_regrid or args.regrid):
                 log.info('Creating spectral slabs for mosaicking ...')
-                images, imagesR = make_mosaic.create_spectral_slab(images, input_dir, 'image', subimage_dict)
+                images, imagesR = make_mosaic.create_spectral_slab(images, input_dir, outname, 'image', subimage_dict)
                 tmp_inputs += images
             make_mosaic.use_montage_for_regridding(
                 input_dir, output_dir, mosaic_type, 'image', images, imagesR, beams, beamsR, outname, bitpix, naxis, subimage_dict, num_workers)
@@ -230,7 +233,7 @@ def main(argv):
         if beamsR_dont_exist:
             if subimage_dict['CRVAL3'] and mosaic_type == 'spectral' and (args.force_regrid or args.regrid):
                 log.info('Creating spectral slabs for mosaicking ...')
-                beams, beamsR = make_mosaic.create_spectral_slab(beams, input_dir, 'pb', subimage_dict)
+                beams, beamsR = make_mosaic.create_spectral_slab(beams, input_dir, outname, 'pb', subimage_dict)
                 tmp_inputs += beams
             log.info('Regridded beams are not all in place, so using montage to create them')
             make_mosaic.use_montage_for_regridding(
@@ -256,8 +259,8 @@ def main(argv):
             log.info('You have asked for all regridded files to be created by this run, even if they are already on disk')
             if subimage_dict['CRVAL3'] and mosaic_type == 'spectral' and (args.force_regrid or args.regrid):
                 log.info('Creating spectral slabs of model and residual cubes for mosaicking ...')
-                models, modelsR = make_mosaic.create_spectral_slab(models, input_dir, 'model', subimage_dict)
-                residuals, residualsR = make_mosaic.create_spectral_slab(residuals, input_dir, 'residual', subimage_dict)
+                models, modelsR = make_mosaic.create_spectral_slab(models, input_dir, outname, 'model', subimage_dict)
+                residuals, residualsR = make_mosaic.create_spectral_slab(residuals, input_dir, outname, 'residual', subimage_dict)
                 tmp_inputs += residuals + models
             make_mosaic.use_montage_for_regridding(
                 input_dir, output_dir, mosaic_type, 'model', models, modelsR, beams, beamsR, outname, bitpix, naxis, subimage_dict, num_workers)
@@ -270,7 +273,7 @@ def main(argv):
                 log.info('Regridded models are not all in place, so using montage to create them')
                 if subimage_dict['CRVAL3'] and mosaic_type == 'spectral' and (args.force_regrid or args.regrid):
                     log.info('Creating spectral slabs for mosaicking ...')
-                    models, modelsR = make_mosaic.create_spectral_slab(models, input_dir, 'model', subimage_dict)
+                    models, modelsR = make_mosaic.create_spectral_slab(models, input_dir, outname, 'model', subimage_dict)
                     tmp_inputs += models
                 make_mosaic.use_montage_for_regridding(
                     input_dir, output_dir, mosaic_type, 'model', models, modelsR, beams, beamsR, outname, bitpix, naxis, subimage_dict, num_workers)
@@ -281,7 +284,7 @@ def main(argv):
                 log.info('Regridded residuals are not all in place, so using montage to create them')
                 if subimage_dict['CRVAL3'] and mosaic_type == 'spectral' and (args.force_regrid or args.regrid):
                     log.info('Creating spectral slabs for mosaicking ...')
-                    residuals, residualsR = make_mosaic.create_spectral_slab(residuals, input_dir, 'residual', subimage_dict)
+                    residuals, residualsR = make_mosaic.create_spectral_slab(residuals, input_dir, outname, 'residual', subimage_dict)
                     tmp_inputs += residuals
                 make_mosaic.use_montage_for_regridding(
                     input_dir, output_dir, mosaic_type, 'residual', residuals, residualsR, beams, beamsR, outname, bitpix, naxis, subimage_dict, num_workers)
@@ -301,9 +304,13 @@ def main(argv):
     os.system('mv log-make_mosaic.txt '+output_dir+'/')
 
     # Remove temporary spectral slab cubes if there are any
+    log.info('Files we plan to delete are: {}'.format(tmp_inputs))
     if tmp_inputs:
         log.info('Removing temporary spectral slab cubes from the input folder ({}) ...'.format(input_dir))
         for z_cut in tmp_inputs:
-            os.remove(os.path.join(input_dir,z_cut))
+            to_del = os.path.join(input_dir,z_cut)
+            log.info('Trying to delete {}'.format(to_del))
+            os.remove(to_del)
+        log.info('Done')
 
     return 0

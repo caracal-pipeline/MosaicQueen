@@ -124,7 +124,8 @@ def filter_images_list(images, subimage_dict, input_dir, mosaic_type):
 
     return images_filtered
 
-def create_spectral_slab(images, input_dir, image_type, subimage_dict):
+#@profile
+def create_spectral_slab(images, input_dir, outname, image_type, subimage_dict):
 
     zmin_subim, zmax_subim = subimage_dict['CRVAL3'] - subimage_dict['dv']/2., subimage_dict['CRVAL3'] + subimage_dict['dv']/2.
     images_z_cut = []
@@ -153,7 +154,7 @@ def create_spectral_slab(images, input_dir, image_type, subimage_dict):
             hdul[0].header['CRPIX3'] = 0
             hdul[0].header['CRVAL3'] = im_z[inds[0]]
             hdul[0].header['NAXIS3'] = hdul[0].data.shape[0]
-            im_z_cut = im.replace(image_type,'z_cut_'+image_type)
+            im_z_cut = outname+'_'+im.replace(image_type,'z_cut_'+image_type)
             hdul.writeto(os.path.join(input_dir,im_z_cut), overwrite = True)
             images_z_cut.append(im_z_cut)
 
@@ -162,6 +163,7 @@ def create_spectral_slab(images, input_dir, image_type, subimage_dict):
 
     return images, imagesR
 
+#@profile
 def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname, bitpix, naxis, subimage_dict, num_workers):
                                # image_type should be 'image', 'pb', 'model', or 'residual'
 
@@ -482,13 +484,15 @@ def find_naxis(input_dir, images):
 
     naxis = np.unique(naxis_list)
     if naxis.shape[0] != 1:
-        log.error()
-        raise ValueError('Inconsistent NAXIS in input files. fFund values {}. Cannot proceed'.format(naxis_list))
+        err_msg = 'Inconsistent NAXIS in input files. fFund values {}. Cannot proceed'.format(naxis_list)
+        log.error(err_msg)
+        raise ValueError(err_msg)
 
     nlongaxis = np.unique(nlongaxis_list)
     if nlongaxis.shape[0] != 1:
-        log.error()
-        raise ValueError('Inconsistent number of axis with length>1 in input files. Found values {}. Cannot proceed'.format(nlongaxis_list))
+        err_msg = 'Inconsistent number of axis with length>1 in input files. Found values {}. Cannot proceed'.format(nlongaxis_list)
+        log.error(err_msg)
+        raise ValueError(err_msg)
 
     return naxis[0], nlongaxis[0]
 
