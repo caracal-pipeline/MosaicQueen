@@ -33,16 +33,17 @@ Work in progress: convolution of input images to a common synthesised beam befor
 Usage
 =======
 
-```
-usage: mosaic-queen [-h] -i INPUT -t TARGET_IMAGES [TARGET_IMAGES ...] -o
+::
+
+  usage: mosaic-queen [-h] -i INPUT -t TARGET_IMAGES [TARGET_IMAGES ...] -o
                     OUTPUT -n NAME [-j NUM_WORKERS] [-a] [-r] [-f]
                     [-bc BEAM_CUTOFF] [-mc MOSAIC_CUTOFF] [-u]
                     [-s {mad,rms,fit}] [-g GUESS_STD] [-ra RA] [-dec DEC]
                     [-v VELOCITY] [-dra DRA] [-ddec DDEC] [-dv DV]
 
-Run make_mosaic over the targets
+  Run make_mosaic over the targets
 
-optional arguments:
+  optional arguments:
   -h, --help            show this help message and exit
   -i INPUT, --input INPUT
                         The directory that contains the (2D or 3D) images and
@@ -121,4 +122,4 @@ optional arguments:
                         the unit used by the input images), if the user does
                         not want to image the entire velocity/frequency range
                         covered by the input cubes.
-```
+
