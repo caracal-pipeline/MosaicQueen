@@ -124,7 +124,7 @@ def filter_images_list(images, subimage_dict, input_dir, mosaic_type):
 
     return images_filtered
 
-@profile
+#@profile
 def create_spectral_slab(images, input_dir, outname, image_type, subimage_dict):
 
     zmin_subim, zmax_subim = subimage_dict['CRVAL3'] - subimage_dict['dv']/2., subimage_dict['CRVAL3'] + subimage_dict['dv']/2.
@@ -163,7 +163,7 @@ def create_spectral_slab(images, input_dir, outname, image_type, subimage_dict):
 
     return images, imagesR
 
-@profile
+#@profile
 def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname, bitpix, naxis, subimage_dict, num_workers):
                                # image_type should be 'image', 'pb', 'model', or 'residual'
 
@@ -497,7 +497,7 @@ def find_naxis(input_dir, images):
     return naxis[0], nlongaxis[0]
 
 
-@profile
+#@profile
 def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, outname, imagesR, beamsR, cutoff, uwei, statistic, sigma_guess, images, mos_cutoff, bitpix, naxis, all_noise_estimates=[]):
 
 
