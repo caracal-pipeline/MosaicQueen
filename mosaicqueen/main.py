@@ -75,10 +75,12 @@ def main(argv):
                               "If they are found, regridding will not proceed because this is a time-consuming step.)")
     parser.add_argument("-bc", "--beam-cutoff", type=float, default=0.1,
                         help="The cutoff in the primary beam to use."
-                              "E.g. The default of 0.1 means going down to the 10 percent level for each pointing.")
+                              "E.g. The default of 0.1 means going down to the 10 percent level for each pointing."
+                              " Set to zero for no primary beam cutoff.")
     parser.add_argument("-mc", "--mosaic-cutoff", type=float, default=0.2,
                         help="Sensitivity cutoff in the final mosaic. Pixels with a noise level > minimum mosaic noise / cutoff are blanked in all final products. "
-                              "E.g. The default of 0.2 means blanking in the mosaic all pixels with a noise level > 5x the minimum mosaic noise level.")
+                              "E.g. The default of 0.2 means blanking in the mosaic all pixels with a noise level > 5x the minimum mosaic noise level."
+                              " Set to zero for no cutoff (but some cutoff may still result from the -bc setting).")
     parser.add_argument("-u", "--unity-weights", action="store_true",
                         help="Build the mosaic using weight=1 instead of weight=1/noise**2 for the input images.")
     parser.add_argument("-s", "--statistic", choices= ["mad", "rms", "fit"], required = False, default = "mad",
