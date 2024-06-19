@@ -19,7 +19,7 @@ def readme():
         return f.read()
 
 PACKAGE_NAME = 'mosaic-queen'
-__version__ = '1.1.1'
+__version__ = '1.1.1-dev'
 
 setup(name = PACKAGE_NAME,
     version = __version__,
