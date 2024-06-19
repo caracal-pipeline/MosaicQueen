@@ -33,6 +33,7 @@ Work in progress: convolution of input images to a common synthesised beam befor
 Usage
 =======
 
+```
 usage: mosaic-queen [-h] -i INPUT -t TARGET_IMAGES [TARGET_IMAGES ...] -o
                     OUTPUT -n NAME [-j NUM_WORKERS] [-a] [-r] [-f]
                     [-bc BEAM_CUTOFF] [-mc MOSAIC_CUTOFF] [-u]
@@ -120,4 +121,4 @@ optional arguments:
                         the unit used by the input images), if the user does
                         not want to image the entire velocity/frequency range
                         covered by the input cubes.
-
+```
