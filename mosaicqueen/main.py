@@ -150,10 +150,8 @@ def main(argv):
 
     # check NAXIS and NAXISi of input FITS files to decide whether to follow the 2D or 3D mosaic workflow
     naxis, nlongaxis = make_mosaic.find_naxis(input_dir, images)
-    if nlongaxis == 2 and naxis == 2:
+    if nlongaxis == 2:
         mosaic_type = 'continuum'
-    elif nlongaxis == 2 and naxis > 2:
-        mosaic_type = 'spectral'
     elif nlongaxis == 3:
         mosaic_type = 'spectral'
     else:
