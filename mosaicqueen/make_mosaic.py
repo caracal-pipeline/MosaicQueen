@@ -384,7 +384,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
                             elif Rfits[0].header['naxis'] == 4:
                                 Rfits[0].data = Rfits[0].data[:,:,:,:-dnaxis1]
                             #Rfits[0].header['naxis1'] -= dnaxis1
-                            log.info('    Removed {} RA pixels from end of pbR'.format(dcrpix1))
+                            log.info('    Removed {} RA pixels from end of pbR'.format(dnaxis1))
                         # case where pbR misses some X's at the end of the array
                         elif dnaxis1 < 0:
                             if Rfits[0].header['naxis'] == 2:
@@ -394,7 +394,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
                             if Rfits[0].header['naxis'] == 4:
                                 Rfits[0].data = np.concatenate([Rfits[0].data, np.empty((Rfits[0].header['naxis4'], Rfits[0].header['naxis3'], Rfits[0].header['naxis2'], -dnaxis1)) * np.nan], axis=3)
                             #Rfits[0].header['naxis1'] -= dnaxis1
-                            log.info('    Added {} RA pixels at end of pbR'.format(-dcrpix1))
+                            log.info('    Added {} RA pixels at end of pbR'.format(-dnaxis1))
                         modified_head = True
                     if Rfits[0].header['naxis2'] != imR_naxis2:
                         log.info('    Adjusting Dec size of {} to match Dec size of {}'.format(bbbR, bbbR.replace('pbR.fits', 'imageR.fits')))
@@ -436,7 +436,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
                             elif Rfits[0].header['naxis'] == 4:
                                 Rfits[0].data = Rfits[0].data[:,:,:-dnaxis2,:]
                             #Rfits[0].header['naxis2'] -= dnaxis2
-                            log.info('    Removed {} Dec pixels from end of pbR'.format(dcrpix2))
+                            log.info('    Removed {} Dec pixels from end of pbR'.format(dnaxis2))
                         # case where pbR misses some Y's at the end of the array
                         elif dnaxis2 < 0:
                             if Rfits[0].header['naxis'] == 2:
@@ -446,7 +446,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
                             if Rfits[0].header['naxis'] == 4:
                                 Rfits[0].data = np.concatenate([Rfits[0].data, np.empty((Rfits[0].header['naxis4'], Rfits[0].header['naxis3'], -dnaxis2, Rfits[0].header['naxis1'])) * np.nan], axis=2)
                             #Rfits[0].header['naxis2'] -= dnaxis2
-                            log.info('    Added {} Dec pixels at end of pbR'.format(-dcrpix2))
+                            log.info('    Added {} Dec pixels at end of pbR'.format(-dnaxis2))
                         modified_head = True
                     if modified_head:
                         fits.writeto('{0:s}/{1:s}'.format(output_dir, bbbR), Rfits[0].data.astype(dtype), header=Rfits[0].header, overwrite=True)
