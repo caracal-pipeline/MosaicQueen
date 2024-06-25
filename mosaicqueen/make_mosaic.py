@@ -339,6 +339,11 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
                         log.info('    Converting from {}-bit to {}-bit for {}'.format(np.abs(Rfits[0].header['bitpix']), bitpix, bbbR))
                         Rfits[0].header['bitpix'] = -bitpix
                         modified_head = True
+                    with fits.open('{0:s}/{1:s}'.format(output_dir, bbbR.replace('pbR.fits', 'imageR.fits'))) as imRfits:
+                        if Rfits[0].header['naxis1'] != imRfits[0].header['naxis1'] or Rfits[0].header['naxis2'] != imRfits[0].header['naxis2']:
+                            print('################')
+                            print('Add here change of {} to match {}'.format(bbbR, bbbR.replace('pbR.fits', 'imageR.fits')))
+                            print('################')
                     if modified_head:
                         fits.writeto('{0:s}/{1:s}'.format(output_dir, bbbR), Rfits[0].data.astype(dtype), header=Rfits[0].header, overwrite=True)
 
