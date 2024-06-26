@@ -339,6 +339,115 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
                         log.info('    Converting from {}-bit to {}-bit for {}'.format(np.abs(Rfits[0].header['bitpix']), bitpix, bbbR))
                         Rfits[0].header['bitpix'] = -bitpix
                         modified_head = True
+                    with fits.open('{0:s}/{1:s}'.format(output_dir, bbbR.replace('pbR.fits', 'imageR.fits'))) as imRfits:
+                        imR_naxis1 = imRfits[0].header['naxis1']
+                        imR_naxis2 = imRfits[0].header['naxis2']
+                        imR_crpix1 = imRfits[0].header['crpix1']
+                        imR_crpix2 = imRfits[0].header['crpix2']
+                    if Rfits[0].header['naxis1'] != imR_naxis1:
+                        log.info('    Adjusting RA size of {} to match RA size of {}'.format(bbbR, bbbR.replace('pbR.fits', 'imageR.fits')))
+                        log.info('    The mismatch is as follows:')
+                        log.info('        NAXIS1 = {} vs {}'.format(Rfits[0].header['naxis1'], imR_naxis1))
+                        log.info('        CRPIX1 = {} vs {}'.format(Rfits[0].header['crpix1'], imR_crpix1))
+                        # check start of array
+                        dcrpix1 = int(np.round(Rfits[0].header['crpix1'] - imR_crpix1))
+                        # case where pbR has extra X's at the start of the array
+                        if dcrpix1 > 0:
+                            if Rfits[0].header['naxis'] == 2:
+                                Rfits[0].data = Rfits[0].data[:,dcrpix1:]
+                            elif Rfits[0].header['naxis'] == 3:
+                                Rfits[0].data = Rfits[0].data[:,:,dcrpix1:]
+                            elif Rfits[0].header['naxis'] == 4:
+                                Rfits[0].data = Rfits[0].data[:,:,:,dcrpix1:]
+                            # Update CRPIX1, while NAXIS1 is updated automatically
+                            Rfits[0].header['crpix1'] -= dcrpix1
+                            log.info('    Removed {} RA pixels from start of pbR'.format(dcrpix1))
+                        # case where pbR misses some X's at the start of the array
+                        elif dcrpix1 < 0:
+                            if Rfits[0].header['naxis'] == 2:
+                                Rfits[0].data = np.concatenate([np.empty((Rfits[0].header['naxis2'], -dcrpix1)) * np.nan, Rfits[0].data], axis=1)
+                            if Rfits[0].header['naxis'] == 3:
+                                Rfits[0].data = np.concatenate([np.empty((Rfits[0].header['naxis3'], Rfits[0].header['naxis2'], -dcrpix1)) * np.nan, Rfits[0].data], axis=2)
+                            if Rfits[0].header['naxis'] == 4:
+                                Rfits[0].data = np.concatenate([np.empty((Rfits[0].header['naxis4'], Rfits[0].header['naxis3'], Rfits[0].header['naxis2'], -dcrpix1)) * np.nan, Rfits[0].data], axis=3)
+                            # Update CRPIX1, while NAXIS1 is updated automatically
+                            Rfits[0].header['crpix1'] -= dcrpix1
+                            log.info('    Added {} RA pixels at start of pbR'.format(-dcrpix1))
+                        # check end of array
+                        dnaxis1 = int(np.round(Rfits[0].header['naxis1'] - imR_naxis1))
+                        # case where pbR has extra X's at the end of the array
+                        if dnaxis1 > 0:
+                            if Rfits[0].header['naxis'] == 2:
+                                Rfits[0].data = Rfits[0].data[:,:-dnaxis1]
+                            elif Rfits[0].header['naxis'] == 3:
+                                Rfits[0].data = Rfits[0].data[:,:,:-dnaxis1]
+                            elif Rfits[0].header['naxis'] == 4:
+                                Rfits[0].data = Rfits[0].data[:,:,:,:-dnaxis1]
+                            #Rfits[0].header['naxis1'] -= dnaxis1
+                            log.info('    Removed {} RA pixels from end of pbR'.format(dnaxis1))
+                        # case where pbR misses some X's at the end of the array
+                        elif dnaxis1 < 0:
+                            if Rfits[0].header['naxis'] == 2:
+                                Rfits[0].data = np.concatenate([Rfits[0].data, np.empty((Rfits[0].header['naxis2'], -dnaxis1)) * np.nan], axis=1)
+                            if Rfits[0].header['naxis'] == 3:
+                                Rfits[0].data = np.concatenate([Rfits[0].data, np.empty((Rfits[0].header['naxis3'], Rfits[0].header['naxis2'], -dnaxis1)) * np.nan], axis=2)
+                            if Rfits[0].header['naxis'] == 4:
+                                Rfits[0].data = np.concatenate([Rfits[0].data, np.empty((Rfits[0].header['naxis4'], Rfits[0].header['naxis3'], Rfits[0].header['naxis2'], -dnaxis1)) * np.nan], axis=3)
+                            #Rfits[0].header['naxis1'] -= dnaxis1
+                            log.info('    Added {} RA pixels at end of pbR'.format(-dnaxis1))
+                        modified_head = True
+                    if Rfits[0].header['naxis2'] != imR_naxis2:
+                        log.info('    Adjusting Dec size of {} to match Dec size of {}'.format(bbbR, bbbR.replace('pbR.fits', 'imageR.fits')))
+                        log.info('    The mismatch is as follows:')
+                        log.info('        NAXIS2 = {} vs {}'.format(Rfits[0].header['naxis2'], imR_naxis2))
+                        log.info('        CRPIX2 = {} vs {}'.format(Rfits[0].header['crpix2'], imR_crpix2))
+                        # check start of array
+                        dcrpix2 = int(np.round(Rfits[0].header['crpix2'] - imR_crpix2))
+                        # case where pbR has extra Y's at the start of the array
+                        if dcrpix2 > 0:
+                            if Rfits[0].header['naxis'] == 2:
+                                Rfits[0].data = Rfits[0].data[dcrpix2:,:]
+                            elif Rfits[0].header['naxis'] == 3:
+                                Rfits[0].data = Rfits[0].data[:,dcrpix2:,:]
+                            elif Rfits[0].header['naxis'] == 4:
+                                Rfits[0].data = Rfits[0].data[:,:,dcrpix2:,:]
+                            # Update CRPIX2, while NAXIS2 is updated automatically
+                            Rfits[0].header['crpix2'] -= dcrpix2
+                            log.info('    Removed {} Dec pixels from start of pbR'.format(dcrpix2))
+                        # case where pbR misses some Y's at the start of the array
+                        elif dcrpix2 < 0:
+                            if Rfits[0].header['naxis'] == 2:
+                                Rfits[0].data = np.concatenate([np.empty((-dcrpix2, Rfits[0].header['naxis1'])) * np.nan, Rfits[0].data], axis=0)
+                            if Rfits[0].header['naxis'] == 3:
+                                Rfits[0].data = np.concatenate([np.empty((Rfits[0].header['naxis3'], -dcrpix2, Rfits[0].header['naxis1'])) * np.nan, Rfits[0].data], axis=1)
+                            if Rfits[0].header['naxis'] == 4:
+                                Rfits[0].data = np.concatenate([np.empty((Rfits[0].header['naxis4'], Rfits[0].header['naxis3'], -dcrpix2, Rfits[0].header['naxis1'])) * np.nan, Rfits[0].data], axis=2)
+                            # Update CRPIX2, while NAXIS2 is updated automatically
+                            Rfits[0].header['crpix2'] -= dcrpix2
+                            log.info('    Added {} Dec pixels at start of pbR'.format(-dcrpix2))
+                        # check end of array
+                        dnaxis2 = int(np.round(Rfits[0].header['naxis2'] - imR_naxis2))
+                        # case where pbR has extra Y's at the end of the array
+                        if dnaxis2 > 0:
+                            if Rfits[0].header['naxis'] == 2:
+                                Rfits[0].data = Rfits[0].data[:-dnaxis2,:]
+                            elif Rfits[0].header['naxis'] == 3:
+                                Rfits[0].data = Rfits[0].data[:,:-dnaxis2,:]
+                            elif Rfits[0].header['naxis'] == 4:
+                                Rfits[0].data = Rfits[0].data[:,:,:-dnaxis2,:]
+                            #Rfits[0].header['naxis2'] -= dnaxis2
+                            log.info('    Removed {} Dec pixels from end of pbR'.format(dnaxis2))
+                        # case where pbR misses some Y's at the end of the array
+                        elif dnaxis2 < 0:
+                            if Rfits[0].header['naxis'] == 2:
+                                Rfits[0].data = np.concatenate([Rfits[0].data, np.empty((-dnaxis2, Rfits[0].header['naxis1'])) * np.nan], axis=0)
+                            if Rfits[0].header['naxis'] == 3:
+                                Rfits[0].data = np.concatenate([Rfits[0].data, np.empty((Rfits[0].header['naxis3'], -dnaxis2, Rfits[0].header['naxis1'])) * np.nan], axis=1)
+                            if Rfits[0].header['naxis'] == 4:
+                                Rfits[0].data = np.concatenate([Rfits[0].data, np.empty((Rfits[0].header['naxis4'], Rfits[0].header['naxis3'], -dnaxis2, Rfits[0].header['naxis1'])) * np.nan], axis=2)
+                            #Rfits[0].header['naxis2'] -= dnaxis2
+                            log.info('    Added {} Dec pixels at end of pbR'.format(-dnaxis2))
+                        modified_head = True
                     if modified_head:
                         fits.writeto('{0:s}/{1:s}'.format(output_dir, bbbR), Rfits[0].data.astype(dtype), header=Rfits[0].header, overwrite=True)
 
