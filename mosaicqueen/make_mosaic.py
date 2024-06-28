@@ -165,7 +165,7 @@ def create_spectral_slab(images, input_dir, outname, image_type, subimage_dict):
 
 #@profile
 def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname, bitpix, naxis, subimage_dict, num_workers):
-                               # image_type should be 'image', 'pb', 'model', or 'residual'
+                               # image_type should be 'image', 'pb', 'mask', 'model', or 'residual'
 
     dtype = f"float{bitpix}"
 
@@ -177,7 +177,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         montage_projection = 'mProject'
         montage_add = 'mAdd'
 
-    if image_type != 'pb':  # i.e. creating a header for 'image', 'model', or 'residual'
+    if image_type != 'pb':  # i.e. creating a header for 'image', 'mask', 'model', or 'residual'
         log.info('Running montage tasks to create mosaic header ...')
         # Create an image list
         create_montage_list(images, '{0:s}/{1:s}_{2:s}_fields'.format(output_dir,outname,image_type))
@@ -699,8 +699,13 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
     log.info('Blanking mosaic pixels with noise level > minimum mosaic noise level / {0:.3f} (set by --mosaic_cutoff)'.format(mos_cutoff))
     finite_array[norm_array < np.nanmax(norm_array) * mos_cutoff**2] = False
 
+    # For the mask array, convert to binary mask
+    if image_type == 'mask':
+        log.info('Converting mask mosaic to 16-bit binary FITS keeping all pixels above a threshold of 0.1')
+        mos_array = (mos_array > 0.1).astype('int16')
+
     # Pixels whose value is False in the finite array are blanked in the final mos and norm arrays
-    mos_array[~finite_array] = np.nan
+    mos_array[~finite_array] = 0 if image_type == 'mask' else np.nan
     norm_array[~finite_array] = np.nan
 
     # Fixing mosaic header (add missing keys that exist in the original input cubes but not yet in the mosaic cube)
@@ -755,8 +760,11 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
 #            moshead['ctype3'] = head0['ctype3']
 #        if 'ctype4' in head0:
 #            moshead['ctype4'] = head0['ctype4']
-    fits.writeto('{0:s}/{1:s}_{2:s}.fits'.format(output_dir,outname,image_type), mos_array /
-                 norm_array, overwrite=True, header=moshead)
+    if image_type == 'mask':
+        fits.writeto('{0:s}/{1:s}_{2:s}.fits'.format(output_dir,outname,image_type), mos_array, overwrite=True, header=moshead)
+    else:
+        fits.writeto('{0:s}/{1:s}_{2:s}.fits'.format(output_dir,outname,image_type), mos_array /
+                     norm_array, overwrite=True, header=moshead)
 
     # Creating the accompanying 'noise' and 'weights' mosaics
     if image_type == 'image':  # Only want one copy of the _noise and _weights mosaics to be produced
@@ -765,7 +773,7 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
         fits.writeto('{0:s}/{1:s}_weights.fits'.format(output_dir,outname),
                      np.sqrt(norm_array), overwrite=True, header=moshead)
         log.info('The following mosaic FITS were written to disk: {0:s}_{1:s}.fits {0:s}_noise.fits {0:s}_weights.fits'.format(outname,image_type))
-    else:  # i.e. when making a mosaic of the 'model' or 'residual' .fits files
+    else:  # i.e. when making a mosaic of the 'mask', 'model' or 'residual' .fits files
         log.info('The following mosaic FITS was written to disk: {0:s}_{1:s}.fits'.format(outname,image_type))
 
     log.info("Mosaicking of '{}' files completed".format(image_type))
