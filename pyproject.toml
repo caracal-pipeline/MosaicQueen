@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "misaic-queen"
+version = "1.2.0"
+description = "For making astronomy image mosaics using montage"
+authors = [
+    "Sarah White <sarahwhite.astro@gmail.com>",
+    "CaraCal pipeline team",
+    ]
+
+readme = "README.rst"
+license = "GNU GPL v2"
+packages = [{ include = "mosaicqueen" }]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+numpy = "<2.0"
+astropy = "*"
+memory-profiler = "*"
+matplotlib = "*"
+scipy = "*"
+
+[tool.poetry.scripts]
+mosaic-queen = "mosaicqueen.main:main"
+
+[build-system]
+requires = ["setuptools", "poetry-core"]
+build-backend = "poetry.core.masonry.api"
