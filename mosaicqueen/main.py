@@ -17,12 +17,6 @@ import tracemalloc
 
 log = mosaicqueen.log
 
-# So that error handling is compatible with Python 2 as well as Python 3
-try:
-    FileNotFoundError
-except NameError:
-    FileNotFoundError = IOError
-
 def check_for_files(directory, fits_files, type_of_fits_file, regrid_boolean):
     # Remember that if regridded files were produced by MosaicKing, we expect them to be in the output directory
     # Check location for beams made by MosaicKing
@@ -49,7 +43,7 @@ def check_for_files(directory, fits_files, type_of_fits_file, regrid_boolean):
     return dont_exist
 
 
-def main(argv):
+def main():
 
     parser = ArgumentParser(description="Run make_mosaic over the targets")
 
@@ -110,7 +104,7 @@ def main(argv):
                         help="Velocity/frequency range of the output mosaic cube (in the unit used by the input images), if the user does not want to image "
                         "the entire velocity/frequency range covered by the input cubes.")
 
-    args = parser.parse_args(argv)
+    args = parser.parse_args(sys.argv[1:])
     input_dir = args.input
     num_workers = args.num_workers
     beam_cutoff = args.beam_cutoff
