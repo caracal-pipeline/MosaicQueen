@@ -333,6 +333,6 @@ def main(argv):
             to_del = os.path.join(input_dir,z_cut)
             log.info('Trying to delete {}'.format(to_del))
             os.remove(to_del)
-        log.info('Done')
+    log.info('Done')
 
     return 0
