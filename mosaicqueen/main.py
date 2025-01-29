@@ -65,7 +65,7 @@ def main(argv):
     parser.add_argument("-j", "--num-workers", type=int, default=0,
                         help="Number of worker threads. Default=0 means all available threads.")
     parser.add_argument("-a", "--associated-mosaics", nargs='+', default="", choices=["mask", "model", "residual"],
-                        help="Also make mosaics of the associated .fits files selected among 'mask', 'model' and 'residual'. Users "
+                        help="Also make mosaics of the associated .fits files, selecting any of 'mask', 'model' and 'residual'. Users "
                              "should give their choice as a space-separated list. The defult is to not make any associated mosaics.")
     parser.add_argument("-r", "--regrid", action="store_true",
                         help="Use montage for regridding the images and beams."
@@ -181,6 +181,7 @@ def main(argv):
     log.info("Will generate a mosaic from the input images.")
     if not args.associated_mosaics:
         log.info("If you would also like mosaics to be made from the associated masks, models and/or residuals, please re-run giving your choice at the '-a' argument.")
+        masks, masksR, models, modelsR, residuals, residualsR = [], [], [], [], [], []
 
     else:
         if 'mask' in args.associated_mosaics:

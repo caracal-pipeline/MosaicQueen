@@ -63,8 +63,8 @@ Usage
                         available threads.
   -a {mask,model,residual} [{mask,model,residual} ...], --associated-mosaics
                         {mask,model,residual} [{mask,model,residual} ...]
-                        Also make mosaics of the associated .fits files
-                        selected among 'mask', 'model' and 'residual'. Users
+                        Also make mosaics of the associated .fits files,
+                        selecting any of 'mask', 'model' and 'residual'. Users
                         should give their choice as a space-separated list.
                         The defult is to not make any associated mosaics.
   -r, --regrid          Use montage for regridding the images and beams. Also
