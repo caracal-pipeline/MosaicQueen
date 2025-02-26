@@ -248,7 +248,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
                        montage_projection, input_dir, cc, output_dir, cc.replace(image_type+'.fits', image_type+'R.fits'), outname, image_type)
                 future = executor.submit(Run, cmd, getout=1)
                 futures.append(future)
-            # Add 4th axis back if it was removed; convert bitpix & change naxis of Montage output FITS (usually 64-bit) to bitpix & naxis of input FITS
+            # Add 4th axis back if it was removed; convert bitpix & change naxis of Montage output FITS (usually 64-bit) to bitpix & naxis of input FITS; copy exptime if needed
             for future in cf.as_completed(futures):
                 ccc = future.result().split()[1].split('/')[-1]
                 if len(removed_keys[ccc]):
@@ -260,9 +260,19 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
                             head[hh] = removed_keys[ccc][hh]
                         fits.writeto('{0:s}/{1:s}'.format(input_dir, ccc), Rfits[0].data, header=head, overwrite=True)
 
+                with fits.open('{0:s}/{1:s}'.format(input_dir, ccc)) as EXPfits:
+                    if 'exptime' in EXPfits[0].header:
+                        exptime = EXPfits[0].header['exptime']
+                        log.info('    Taking EXPTIME from {}'.format(ccc))
+                    else:
+                        exptime = None
+
                 cccR = ccc.replace(image_type+'.fits', image_type+'R.fits')
                 with fits.open('{0:s}/{1:s}'.format(output_dir, cccR)) as Rfits:
                     modified_head = False
+                    if exptime:
+                        Rfits[0].header['exptime'] = exptime
+                        modified_head = True
                     if Rfits[0].header['naxis'] != naxis:
                         log.info('    Changing NAXIS from {} to {} for {}'.format(Rfits[0].header['naxis'], naxis, cccR))
                         while Rfits[0].header['naxis'] < naxis:
@@ -596,13 +606,18 @@ def gauss(x, *p):  # Define model function to be used to fit to the data in esti
 
 def estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_filename):
 
-    if statistic == 'mad':
+    if statistic == "exptime":
+        log.info('... taking noise as 1./SQRT(EXPTIME) from header ...')
+        image_noise_estimate = 1./np.sqrt(image_regrid_hdu[0].header['exptime'])
+        log.info('... noise estimate = {0:.3e} Jy/beam'.format(image_noise_estimate)) # Assumed units
+
+    elif statistic == 'mad':
         log.info('... using the median absolute deviation of all negative pixels (assuming median = 0) ...')
         image_tmp = image_regrid_hdu[0].data
         image_noise_estimate = 1.4826 * np.median(np.abs(image_tmp[(image_tmp < 0) * (~np.isnan(image_tmp))]))
         log.info('... noise estimate = {0:.3e} Jy/beam'.format(image_noise_estimate)) # Assumed units
 
-    if statistic == 'rms':
+    elif statistic == 'rms':
         log.info('... using the rms of all negative pixels ...')
         image_tmp = image_regrid_hdu[0].data
         image_noise_estimate = np.sqrt(np.nanmean(image_tmp[image_tmp < 0]**2))

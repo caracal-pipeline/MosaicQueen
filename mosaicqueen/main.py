@@ -84,10 +84,12 @@ def main(argv):
                               " Set to zero for no cutoff (but some cutoff may still result from the -bc setting).")
     parser.add_argument("-u", "--unity-weights", action="store_true",
                         help="Build the mosaic using weight=1 instead of weight=1/noise**2 for the input images.")
-    parser.add_argument("-s", "--statistic", choices=["mad", "rms", "fit"], required=False, default="mad",
-                        help="State 'mad' (median absolute deviation), 'rms' (root mean square) or 'fit' (Gaussian fit) as the statistic to be "
-                             "used for estimating the noise level in the input images. This will be derived using the negative pixel-values. "
-                             "The noise levels set the weights=1/noise**2 used when mosaicking. Not used if the '-u' option is enabled. Default is mad.")
+    parser.add_argument("-s", "--statistic", choices=["mad", "rms", "fit", "exptime"], required=False, default="mad",
+                        help="State 'mad' (median absolute deviation), 'rms' (root mean square), 'fit' (Gaussian fit) or 'exptime' (exposure "
+                             "time) as the statistic to be used for estimating the noise level in the input images. If selected, the exposure time is "
+                             "taken from the header key 'EXPTIME' and the noise is set to 1./sqrt(exptime). In all other cases the noise is derived using the "
+                             "negative pixel-values. The noise levels set the weights=1/noise**2 used when mosaicking. Not used if the '-u' option is enabled. "
+                             "The default is 'mad'.")
     parser.add_argument("-g", "--guess-std", type=float, default=0.02,
                         help="An initial guess of the noise level in the input images, if user has set '--statistic' to 'fit'."
                              "(This is to aid a Gaussian fit to the negative pixel-values.) The default of 0.02 assumes that "
