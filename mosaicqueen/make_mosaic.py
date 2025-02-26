@@ -165,7 +165,7 @@ def create_spectral_slab(images, input_dir, outname, image_type, subimage_dict):
 
 #@profile
 def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, images, imagesR, beams, beamsR, outname, bitpix, naxis, subimage_dict, num_workers):
-                               # image_type should be 'image', 'pb', 'model', or 'residual'
+                               # image_type should be 'image', 'pb', 'mask', 'model', or 'residual'
 
     dtype = f"float{bitpix}"
 
@@ -177,7 +177,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
         montage_projection = 'mProject'
         montage_add = 'mAdd'
 
-    if image_type != 'pb':  # i.e. creating a header for 'image', 'model', or 'residual'
+    if image_type != 'pb':  # i.e. creating a header for 'image', 'mask', 'model', or 'residual'
         log.info('Running montage tasks to create mosaic header ...')
         # Create an image list
         create_montage_list(images, '{0:s}/{1:s}_{2:s}_fields'.format(output_dir,outname,image_type))
@@ -248,7 +248,7 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
                        montage_projection, input_dir, cc, output_dir, cc.replace(image_type+'.fits', image_type+'R.fits'), outname, image_type)
                 future = executor.submit(Run, cmd, getout=1)
                 futures.append(future)
-            # Add 4th axis back if it was removed; convert bitpix & change naxis of Montage output FITS (usually 64-bit) to bitpix & naxis of input FITS
+            # Add 4th axis back if it was removed; convert bitpix & change naxis of Montage output FITS (usually 64-bit) to bitpix & naxis of input FITS; copy exptime if needed
             for future in cf.as_completed(futures):
                 ccc = future.result().split()[1].split('/')[-1]
                 if len(removed_keys[ccc]):
@@ -260,9 +260,19 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
                             head[hh] = removed_keys[ccc][hh]
                         fits.writeto('{0:s}/{1:s}'.format(input_dir, ccc), Rfits[0].data, header=head, overwrite=True)
 
+                with fits.open('{0:s}/{1:s}'.format(input_dir, ccc)) as EXPfits:
+                    if 'exptime' in EXPfits[0].header:
+                        exptime = EXPfits[0].header['exptime']
+                        log.info('    Taking EXPTIME from {}'.format(ccc))
+                    else:
+                        exptime = None
+
                 cccR = ccc.replace(image_type+'.fits', image_type+'R.fits')
                 with fits.open('{0:s}/{1:s}'.format(output_dir, cccR)) as Rfits:
                     modified_head = False
+                    if exptime:
+                        Rfits[0].header['exptime'] = exptime
+                        modified_head = True
                     if Rfits[0].header['naxis'] != naxis:
                         log.info('    Changing NAXIS from {} to {} for {}'.format(Rfits[0].header['naxis'], naxis, cccR))
                         while Rfits[0].header['naxis'] < naxis:
@@ -276,6 +286,115 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
                     if Rfits[0].header['bitpix'] != -bitpix:
                         log.info('    Converting from {}-bit to {}-bit for {}'.format(np.abs(Rfits[0].header['bitpix']), bitpix, cccR))
                         Rfits[0].header['bitpix'] = -bitpix
+                        modified_head = True
+                    with fits.open('{0:s}/{1:s}'.format(output_dir, cccR.replace(image_type+'R.fits', 'imageR.fits'))) as imRfits:
+                        imR_naxis1 = imRfits[0].header['naxis1']
+                        imR_naxis2 = imRfits[0].header['naxis2']
+                        imR_crpix1 = imRfits[0].header['crpix1']
+                        imR_crpix2 = imRfits[0].header['crpix2']
+                    if Rfits[0].header['naxis1'] != imR_naxis1:
+                        log.info('    Adjusting RA size of {} to match RA size of {}'.format(cccR, cccR.replace(image_type+'R.fits', 'imageR.fits')))
+                        log.info('    The mismatch is as follows:')
+                        log.info('        NAXIS1 = {} vs {}'.format(Rfits[0].header['naxis1'], imR_naxis1))
+                        log.info('        CRPIX1 = {} vs {}'.format(Rfits[0].header['crpix1'], imR_crpix1))
+                        # check start of array
+                        dcrpix1 = int(np.round(Rfits[0].header['crpix1'] - imR_crpix1))
+                        # case where -R has extra X's at the start of the array
+                        if dcrpix1 > 0:
+                            if Rfits[0].header['naxis'] == 2:
+                                Rfits[0].data = Rfits[0].data[:,dcrpix1:]
+                            elif Rfits[0].header['naxis'] == 3:
+                                Rfits[0].data = Rfits[0].data[:,:,dcrpix1:]
+                            elif Rfits[0].header['naxis'] == 4:
+                                Rfits[0].data = Rfits[0].data[:,:,:,dcrpix1:]
+                            # Update CRPIX1, while NAXIS1 is updated automatically
+                            Rfits[0].header['crpix1'] -= dcrpix1
+                            log.info('    Removed {} RA pixels from start of {}R'.format(dcrpix1, image_type))
+                        # case where -R misses some X's at the start of the array
+                        elif dcrpix1 < 0:
+                            if Rfits[0].header['naxis'] == 2:
+                                Rfits[0].data = np.concatenate([np.empty((Rfits[0].header['naxis2'], -dcrpix1)) * np.nan, Rfits[0].data], axis=1)
+                            if Rfits[0].header['naxis'] == 3:
+                                Rfits[0].data = np.concatenate([np.empty((Rfits[0].header['naxis3'], Rfits[0].header['naxis2'], -dcrpix1)) * np.nan, Rfits[0].data], axis=2)
+                            if Rfits[0].header['naxis'] == 4:
+                                Rfits[0].data = np.concatenate([np.empty((Rfits[0].header['naxis4'], Rfits[0].header['naxis3'], Rfits[0].header['naxis2'], -dcrpix1)) * np.nan, Rfits[0].data], axis=3)
+                            # Update CRPIX1, while NAXIS1 is updated automatically
+                            Rfits[0].header['crpix1'] -= dcrpix1
+                            log.info('    Added {} RA pixels at start of {}R'.format(-dcrpix1, image_type))
+                        # check end of array
+                        dnaxis1 = int(np.round(Rfits[0].header['naxis1'] - imR_naxis1))
+                        # case where -R has extra X's at the end of the array
+                        if dnaxis1 > 0:
+                            if Rfits[0].header['naxis'] == 2:
+                                Rfits[0].data = Rfits[0].data[:,:-dnaxis1]
+                            elif Rfits[0].header['naxis'] == 3:
+                                Rfits[0].data = Rfits[0].data[:,:,:-dnaxis1]
+                            elif Rfits[0].header['naxis'] == 4:
+                                Rfits[0].data = Rfits[0].data[:,:,:,:-dnaxis1]
+                            #Rfits[0].header['naxis1'] -= dnaxis1
+                            log.info('    Removed {} RA pixels from end of {}R'.format(dnaxis1, image_type))
+                        # case where -R misses some X's at the end of the array
+                        elif dnaxis1 < 0:
+                            if Rfits[0].header['naxis'] == 2:
+                                Rfits[0].data = np.concatenate([Rfits[0].data, np.empty((Rfits[0].header['naxis2'], -dnaxis1)) * np.nan], axis=1)
+                            if Rfits[0].header['naxis'] == 3:
+                                Rfits[0].data = np.concatenate([Rfits[0].data, np.empty((Rfits[0].header['naxis3'], Rfits[0].header['naxis2'], -dnaxis1)) * np.nan], axis=2)
+                            if Rfits[0].header['naxis'] == 4:
+                                Rfits[0].data = np.concatenate([Rfits[0].data, np.empty((Rfits[0].header['naxis4'], Rfits[0].header['naxis3'], Rfits[0].header['naxis2'], -dnaxis1)) * np.nan], axis=3)
+                            #Rfits[0].header['naxis1'] -= dnaxis1
+                            log.info('    Added {} RA pixels at end of {}R'.format(-dnaxis1, image_type))
+                        modified_head = True
+                    if Rfits[0].header['naxis2'] != imR_naxis2:
+                        log.info('    Adjusting Dec size of {} to match Dec size of {}'.format(cccR, cccR.replace(image_type+'R.fits', 'imageR.fits')))
+                        log.info('    The mismatch is as follows:')
+                        log.info('        NAXIS2 = {} vs {}'.format(Rfits[0].header['naxis2'], imR_naxis2))
+                        log.info('        CRPIX2 = {} vs {}'.format(Rfits[0].header['crpix2'], imR_crpix2))
+                        # check start of array
+                        dcrpix2 = int(np.round(Rfits[0].header['crpix2'] - imR_crpix2))
+                        # case where -R has extra Y's at the start of the array
+                        if dcrpix2 > 0:
+                            if Rfits[0].header['naxis'] == 2:
+                                Rfits[0].data = Rfits[0].data[dcrpix2:,:]
+                            elif Rfits[0].header['naxis'] == 3:
+                                Rfits[0].data = Rfits[0].data[:,dcrpix2:,:]
+                            elif Rfits[0].header['naxis'] == 4:
+                                Rfits[0].data = Rfits[0].data[:,:,dcrpix2:,:]
+                            # Update CRPIX2, while NAXIS2 is updated automatically
+                            Rfits[0].header['crpix2'] -= dcrpix2
+                            log.info('    Removed {} Dec pixels from start of {}R'.format(dcrpix2, image_type))
+                        # case where -R misses some Y's at the start of the array
+                        elif dcrpix2 < 0:
+                            if Rfits[0].header['naxis'] == 2:
+                                Rfits[0].data = np.concatenate([np.empty((-dcrpix2, Rfits[0].header['naxis1'])) * np.nan, Rfits[0].data], axis=0)
+                            if Rfits[0].header['naxis'] == 3:
+                                Rfits[0].data = np.concatenate([np.empty((Rfits[0].header['naxis3'], -dcrpix2, Rfits[0].header['naxis1'])) * np.nan, Rfits[0].data], axis=1)
+                            if Rfits[0].header['naxis'] == 4:
+                                Rfits[0].data = np.concatenate([np.empty((Rfits[0].header['naxis4'], Rfits[0].header['naxis3'], -dcrpix2, Rfits[0].header['naxis1'])) * np.nan, Rfits[0].data], axis=2)
+                            # Update CRPIX2, while NAXIS2 is updated automatically
+                            Rfits[0].header['crpix2'] -= dcrpix2
+                            log.info('    Added {} Dec pixels at start of {}R'.format(-dcrpix2, image_type))
+                        # check end of array
+                        dnaxis2 = int(np.round(Rfits[0].header['naxis2'] - imR_naxis2))
+                        # case where -R has extra Y's at the end of the array
+                        if dnaxis2 > 0:
+                            if Rfits[0].header['naxis'] == 2:
+                                Rfits[0].data = Rfits[0].data[:-dnaxis2,:]
+                            elif Rfits[0].header['naxis'] == 3:
+                                Rfits[0].data = Rfits[0].data[:,:-dnaxis2,:]
+                            elif Rfits[0].header['naxis'] == 4:
+                                Rfits[0].data = Rfits[0].data[:,:,:-dnaxis2,:]
+                            #Rfits[0].header['naxis2'] -= dnaxis2
+                            log.info('    Removed {} Dec pixels from end of {}R'.format(dnaxis2, image_type))
+                        # case where -R misses some Y's at the end of the array
+                        elif dnaxis2 < 0:
+                            if Rfits[0].header['naxis'] == 2:
+                                Rfits[0].data = np.concatenate([Rfits[0].data, np.empty((-dnaxis2, Rfits[0].header['naxis1'])) * np.nan], axis=0)
+                            if Rfits[0].header['naxis'] == 3:
+                                Rfits[0].data = np.concatenate([Rfits[0].data, np.empty((Rfits[0].header['naxis3'], -dnaxis2, Rfits[0].header['naxis1'])) * np.nan], axis=1)
+                            if Rfits[0].header['naxis'] == 4:
+                                Rfits[0].data = np.concatenate([Rfits[0].data, np.empty((Rfits[0].header['naxis4'], Rfits[0].header['naxis3'], -dnaxis2, Rfits[0].header['naxis1'])) * np.nan], axis=2)
+                            #Rfits[0].header['naxis2'] -= dnaxis2
+                            log.info('    Added {} Dec pixels at end of {}R'.format(-dnaxis2, image_type))
                         modified_head = True
                     if modified_head:
                         fits.writeto('{0:s}/{1:s}'.format(output_dir, cccR), Rfits[0].data.astype(dtype), header=Rfits[0].header, overwrite=True)
@@ -487,13 +606,18 @@ def gauss(x, *p):  # Define model function to be used to fit to the data in esti
 
 def estimate_noise(image_regrid_hdu, statistic, sigma_guess, check_Gaussian_filename):
 
-    if statistic == 'mad':
+    if statistic == "exptime":
+        log.info('... taking noise as 1./SQRT(EXPTIME) from header ...')
+        image_noise_estimate = 1./np.sqrt(image_regrid_hdu[0].header['exptime'])
+        log.info('... noise estimate = {0:.3e} Jy/beam'.format(image_noise_estimate)) # Assumed units
+
+    elif statistic == 'mad':
         log.info('... using the median absolute deviation of all negative pixels (assuming median = 0) ...')
         image_tmp = image_regrid_hdu[0].data
         image_noise_estimate = 1.4826 * np.median(np.abs(image_tmp[(image_tmp < 0) * (~np.isnan(image_tmp))]))
         log.info('... noise estimate = {0:.3e} Jy/beam'.format(image_noise_estimate)) # Assumed units
 
-    if statistic == 'rms':
+    elif statistic == 'rms':
         log.info('... using the rms of all negative pixels ...')
         image_tmp = image_regrid_hdu[0].data
         image_noise_estimate = np.sqrt(np.nanmean(image_tmp[image_tmp < 0]**2))
@@ -699,8 +823,13 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
     log.info('Blanking mosaic pixels with noise level > minimum mosaic noise level / {0:.3f} (set by --mosaic_cutoff)'.format(mos_cutoff))
     finite_array[norm_array < np.nanmax(norm_array) * mos_cutoff**2] = False
 
+    # For the mask array, convert to binary mask
+    if image_type == 'mask':
+        log.info('Converting mask mosaic to 16-bit binary FITS keeping all pixels above a threshold of 0.1')
+        mos_array = (mos_array > 0.1).astype('int16')
+
     # Pixels whose value is False in the finite array are blanked in the final mos and norm arrays
-    mos_array[~finite_array] = np.nan
+    mos_array[~finite_array] = 0 if image_type == 'mask' else np.nan
     norm_array[~finite_array] = np.nan
 
     # Fixing mosaic header (add missing keys that exist in the original input cubes but not yet in the mosaic cube)
@@ -755,8 +884,11 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
 #            moshead['ctype3'] = head0['ctype3']
 #        if 'ctype4' in head0:
 #            moshead['ctype4'] = head0['ctype4']
-    fits.writeto('{0:s}/{1:s}_{2:s}.fits'.format(output_dir,outname,image_type), mos_array /
-                 norm_array, overwrite=True, header=moshead)
+    if image_type == 'mask':
+        fits.writeto('{0:s}/{1:s}_{2:s}.fits'.format(output_dir,outname,image_type), mos_array, overwrite=True, header=moshead)
+    else:
+        fits.writeto('{0:s}/{1:s}_{2:s}.fits'.format(output_dir,outname,image_type), mos_array /
+                     norm_array, overwrite=True, header=moshead)
 
     # Creating the accompanying 'noise' and 'weights' mosaics
     if image_type == 'image':  # Only want one copy of the _noise and _weights mosaics to be produced
@@ -765,7 +897,7 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
         fits.writeto('{0:s}/{1:s}_weights.fits'.format(output_dir,outname),
                      np.sqrt(norm_array), overwrite=True, header=moshead)
         log.info('The following mosaic FITS were written to disk: {0:s}_{1:s}.fits {0:s}_noise.fits {0:s}_weights.fits'.format(outname,image_type))
-    else:  # i.e. when making a mosaic of the 'model' or 'residual' .fits files
+    else:  # i.e. when making a mosaic of the 'mask', 'model' or 'residual' .fits files
         log.info('The following mosaic FITS was written to disk: {0:s}_{1:s}.fits'.format(outname,image_type))
 
     log.info("Mosaicking of '{}' files completed".format(image_type))
