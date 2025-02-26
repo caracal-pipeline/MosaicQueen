@@ -52,4 +52,4 @@ jobs:
       - name: Install package
         run: poetry install
       - name: Test command
-        run: poetry run mosaick-queen --help
+        run: poetry run mosaic-queen --help
