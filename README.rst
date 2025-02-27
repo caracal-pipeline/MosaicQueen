@@ -89,14 +89,16 @@ Usage
                         result from the -bc setting).
   -u, --unity-weights   Build the mosaic using weight=1 instead of
                         weight=1/noise**2 for the input images.
-  -s {mad,rms,fit}, --statistic {mad,rms,fit}
-                        State 'mad' (median absolute deviation), 'rms' (root
-                        mean square) or 'fit' (Gaussian fit) as the statistic
-                        to be used for estimating the noise level in the
-                        input images. This will be derived using the negative
-                        pixel-values. The noise levels set the
-                        weights=1/noise**2 used when mosaicking. Not used if
-                        the '-u' option is enabled. Default is mad.
+  -s {mad,rms,fit,exptime}, --statistic {mad,rms,fit,exptime}
+                        State 'mad' (median absolute deviation), 'rms' (root mean
+                        square), 'fit' (Gaussian fit) or 'exptime' (exposure time)
+                        as the statistic to be used for estimating the noise level
+                        in the input images. If selected, the exposure time is
+                        taken from the header key 'EXPTIME' and the noise is set to
+                        1./sqrt(exptime). In all other cases the noise is derived
+                        using the negative pixel-values. The noise levels set the
+                        weights=1/noise**2 used when mosaicking. Not used if the '-u'
+                        option is enabled. The default is 'mad'.
   -g GUESS_STD, --guess-std GUESS_STD
                         An initial guess of the noise level in the input
                         images, if user has set '--statistic' to 'fit'.(This
