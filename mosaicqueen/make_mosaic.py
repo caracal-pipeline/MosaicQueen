@@ -714,16 +714,23 @@ def find_naxis(input_dir, images):
                     fitsfile_nlongaxis-=1
             naxis_list.append(fitsfile_naxis)
             nlongaxis_list.append(fitsfile_nlongaxis)
+        else:
+            log.error('Input file {0:s} not found'.format(fitsfile))
+
+    if not len(naxis_list):
+        err_msg = 'None of the input files was found. Cannot proceed.'
+        log.error(err_msg)
+        raise ValueError(err_msg)
 
     naxis = np.unique(naxis_list)
-    if naxis.shape[0] != 1:
-        err_msg = 'Inconsistent NAXIS in input files. fFund values {}. Cannot proceed'.format(naxis_list)
+    if naxis.shape[0] > 1:
+        err_msg = 'Inconsistent NAXIS in input files. Found values {}. Cannot proceed.'.format(naxis_list)
         log.error(err_msg)
         raise ValueError(err_msg)
 
     nlongaxis = np.unique(nlongaxis_list)
-    if nlongaxis.shape[0] != 1:
-        err_msg = 'Inconsistent number of axis with length>1 in input files. Found values {}. Cannot proceed'.format(nlongaxis_list)
+    if nlongaxis.shape[0] > 1:
+        err_msg = 'Inconsistent number of axis with length > 1 in input files. Found values {}. Cannot proceed.'.format(nlongaxis_list)
         log.error(err_msg)
         raise ValueError(err_msg)
 
