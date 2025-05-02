@@ -830,11 +830,6 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
     log.info('Blanking mosaic pixels with noise level > minimum mosaic noise level / {0:.3f} (set by --mosaic_cutoff)'.format(mos_cutoff))
     finite_array[norm_array < np.nanmax(norm_array) * mos_cutoff**2] = False
 
-    # For the mask array, convert to binary mask
-    if image_type == 'mask':
-        log.info('Converting mask mosaic to 16-bit binary FITS keeping all pixels above a threshold of 0.1')
-        mos_array = (mos_array > 0.1).astype('int16')
-
     # Pixels whose value is False in the finite array are blanked in the final mos and norm arrays
     mos_array[~finite_array] = 0 if image_type == 'mask' else np.nan
     norm_array[~finite_array] = np.nan
@@ -891,11 +886,14 @@ def make_mosaic_using_beam_info(input_dir, output_dir, mosaic_type, image_type, 
 #            moshead['ctype3'] = head0['ctype3']
 #        if 'ctype4' in head0:
 #            moshead['ctype4'] = head0['ctype4']
+    mos_array /= norm_array
+    # For the mask array, convert to binary mask
     if image_type == 'mask':
-        fits.writeto('{0:s}/{1:s}_{2:s}.fits'.format(output_dir,outname,image_type), mos_array, overwrite=True, header=moshead)
-    else:
-        fits.writeto('{0:s}/{1:s}_{2:s}.fits'.format(output_dir,outname,image_type), mos_array /
-                     norm_array, overwrite=True, header=moshead)
+        log.info('Converting mask mosaic to 16-bit binary FITS keeping all pixels above a threshold of 0.1')
+        mos_array[~np.isfinite(mos_array)] = 0
+        mos_array /= np.nanmax(mos_array)
+        mos_array = (mos_array > 0.1).astype('int16')
+    fits.writeto('{0:s}/{1:s}_{2:s}.fits'.format(output_dir,outname,image_type), mos_array, overwrite=True, header=moshead)
 
     # Creating the accompanying 'noise' and 'weights' mosaics
     if image_type == 'image':  # Only want one copy of the _noise and _weights mosaics to be produced
