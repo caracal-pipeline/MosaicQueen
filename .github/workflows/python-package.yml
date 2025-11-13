@@ -36,9 +36,9 @@ jobs:
       - name: Test uv
         run: uv --version
       - name: Checkout source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
       - name: Install Python dependencies with uv
         run: uv sync
       - name: Install dependencies
