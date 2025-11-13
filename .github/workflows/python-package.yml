@@ -6,7 +6,7 @@ name: Python package
 on:
   push:
     branches:
-      - "**"   # Triggers on push to any branch, including new ones
+      - "*"   # Triggers on push to any branch, including new ones
     tags:
       - "*"    # Triggers on push to any tag
   pull_request:
