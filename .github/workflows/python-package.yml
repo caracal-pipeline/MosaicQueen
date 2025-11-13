@@ -38,10 +38,11 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v2
         with:
-          fetch-depth: 1         
+          fetch-depth: 1
+      - name: Install Python dependencies with uv
+        run: uv sync
       - name: Install dependencies
         run: |
-          uv pip install --upgrade pip
           uv pip install flake8
       - name: Lint with flake8
         run: |
@@ -49,7 +50,5 @@ jobs:
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-      - name: Install Python dependencies with uv
-        run: uv sync --group tests
       - name: Test command
         run: uv run mosaic-queen --help
