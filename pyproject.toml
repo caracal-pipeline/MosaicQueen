@@ -29,7 +29,6 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "Topic :: Scientific/Engineering :: Astronomy"
 ]
 
 [project.scripts]
@@ -47,3 +46,11 @@ build-backend = "hatchling.build"
 
 [tool.hatch.metadata]
 allow-direct-references = true
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "mosaicqueen"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["mosaicqueen"]
