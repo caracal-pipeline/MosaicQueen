@@ -1,27 +1,49 @@
-[tool.poetry]
+[project]
 name = "mosaic-queen"
-version = "2.0.2"
+version = "2.1.0"
 description = "For making astronomy image mosaics using montage"
 authors = [
-    "Sarah White <sarahwhite.astro@gmail.com>",
-    "CaraCal pipeline team",
-    ]
-
+    { name = "Sarah White", email = "sarahwhite.astro@gmail.com"},
+    { name = "CaraCal pipeline team", email = "caracal-devs@googlegroups.com"},
+]
+requires-python = ">=3.10,<3.14"
 readme = "README.rst"
-license = "GNU GPL v2"
+license = "GPL-2.0-only"
+license-files = ["LICENSE"]
 packages = [{ include = "mosaicqueen" }]
+dependencies = [
+    "astropy",
+    "matplotlib",
+    "memory-profiler",
+    "numpy",
+    "scipy",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Astronomy"
+]
 
-[tool.poetry.dependencies]
-python = "^3.9, < 3.13"
-numpy = "<2.0"
-astropy = "*"
-memory-profiler = "*"
-matplotlib = "*"
-scipy = "*"
-
-[tool.poetry.scripts]
+[project.scripts]
 mosaic-queen = "mosaicqueen.main:main"
 
+[dependency-groups]
+docs = [
+    "Sphinx",
+    "furo"
+]
+
 [build-system]
-requires = ["setuptools", "poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
