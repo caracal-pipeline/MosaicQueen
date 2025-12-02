@@ -10,7 +10,7 @@ A package with mosaicking commands from montage, that also does primary-beam cor
 Installation
 ==============
 
-First install montage via
+First install **montage v6** via
 
 .. code-block:: bash
   
