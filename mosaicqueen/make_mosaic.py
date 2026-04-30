@@ -20,6 +20,7 @@ from memory_profiler import profile
 from astropy.wcs import WCS
 import math
 import concurrent.futures as cf
+import glob
 
 log = mosaicqueen.log
 
@@ -30,6 +31,47 @@ except NameError:
     FileNotFoundError = IOError
 
 # -------------------- Edited functions from the original script ------------------------ #
+
+def check_cdelt3(inputfolder, inputfiles, fix_cdelt3=True):
+    cdelt3s = []
+    for ff in inputfiles:
+        with fits.open('{0:s}/{1:s}'.format(inputfolder, ff)) as f:
+            head = f[0].header
+            if 'cdelt3' in head:
+                cdelt3s.append(head['cdelt3'])
+    if len(cdelt3s):
+        cdelt3_unique = np.unique(np.array(cdelt3s))
+        if cdelt3_unique.shape[0] > 1:
+            log.info("CDELT3 is not identical for all input files. Need to correct this for the mosaic header to be correct.")
+       	    log.info("Found the following unique CDELT3 values:")
+       	    for	cd in cdelt3_unique:
+       	       	log.info('    {0}'.format(cd))
+            cdelt3_maxdiff = cdelt3_unique.max() - cdelt3_unique.min()
+            log.info("Maximum difference between CDELT3 values = {0:.3e}".format(cdelt3_maxdiff))
+            cdelt3_round = int(np.floor(np.abs(np.log10(cdelt3_maxdiff))))
+            log.info("CDELT3 values can be homogenised by rounding them to the {0}-th digit".format(cdelt3_round))
+            if not fix_cdelt3:
+                log.info("This would overwrite the CDELT3 value of the input FITS files. If you wish to proceed, set fix_cdelt3=True. Exiting now ...")
+                sys.exit()
+            cdelt3_final = np.unique(np.around(cdelt3_unique, cdelt3_round))
+            if cdelt3_final.shape[0] != 1:
+                log.info("Something went wrong. After rounding there would still be differences. Check code. Exiting now ...")
+                sys.exit()
+            else:
+                cdelt3_final = cdelt3_final[0]
+            log.info("Homogenising CDELT3 values by rounding them to {0}".format(cdelt3_final))
+
+            # change the cdelt3 values
+            for ff in inputfiles:
+                alltypes = sorted(glob.glob('{0:s}/{1:s}'.format(inputfolder, ff).replace('image.fits', '*.fits')))
+                for al in alltypes:
+                    with fits.open(al, mode="update") as g:
+                        if al[-7:] != '.pb.fits' or np.around(g[0].header['cdelt3'], cdelt3_round) == cdelt3_final:
+                            g[0].header['cdelt3'] = cdelt3_final
+                            log.info("Modifying CDELT3 for file {0}".format(al))
+                        else:
+                            log.info("Not modifying CDELT3 from {0} to {1} for PB file {2:s} because this does not seem safe".format(g[0].header['cdelt3'], cdelt3_final, al))
+
 
 def create_montage_list(inputfiles, outputfile):
     list_file = open(outputfile, 'w')
@@ -179,6 +221,8 @@ def use_montage_for_regridding(input_dir, output_dir, mosaic_type, image_type, i
 
     if image_type != 'pb':  # i.e. creating a header for 'image', 'mask', 'model', or 'residual'
         log.info('Running montage tasks to create mosaic header ...')
+        check_cdelt3(input_dir, images)
+
         # Create an image list
         create_montage_list(images, '{0:s}/{1:s}_{2:s}_fields'.format(output_dir,outname,image_type))
         Run('mImgtbl -t {0:s}/{1:s}_{2:s}_fields {3:s} {0:s}/{1:s}_{2:s}_fields.tbl'.format(output_dir,outname,image_type,input_dir))
