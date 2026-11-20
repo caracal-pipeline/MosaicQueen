@@ -92,24 +92,35 @@ def filter_images_list(images, subimage_dict, input_dir, mosaic_type):
             RA_cent = subimage_dict['CRVAL1'] if subimage_dict['CRVAL1'] else hdul[0].header['CRVAL1']
             Dec_cent = subimage_dict['CRVAL2'] if subimage_dict['CRVAL2'] else hdul[0].header['CRVAL2']
             z_cent = subimage_dict['CRVAL3'] if subimage_dict['CRVAL3'] else 1
+            w2pc = np.zeros((1, hdul[0].header['naxis']))
+            if mosaic_type == 'spectral':
+                w2pc[0,2] = z_cent
+
             for ax in ax_ls:
                 if subimage_dict['CRVAL{}'.format(ax)]:
                     d = subimage_dict[ax_dict[ax]]/2.
                     if ax == '1':
                         cr1_subim = RA_cent - (d/math.cos(np.deg2rad(Dec_cent)))
                         cr2_subim = RA_cent + (d/math.cos(np.deg2rad(Dec_cent)))
-                        cr1_pix, _, _ = w.wcs_world2pix(cr1_subim,Dec_cent,z_cent,0)
-                        cr2_pix, _, _ = w.wcs_world2pix(cr2_subim,Dec_cent,z_cent,0)
+                        w2pc[0,0], w2pc[0,1] = cr1_subim, Dec_cent
+                        cr1_pix = w.wcs_world2pix(w2pc,0)[0,0]
+                        w2pc[0,0], w2pc[0,1] = cr2_subim, Dec_cent
+                        cr2_pix = w.wcs_world2pix(w2pc,0)[0,0]
                     elif ax=='2':
                         cr1_subim = Dec_cent - d
                         cr2_subim = Dec_cent + d
-                        _, cr1_pix, _ = w.wcs_world2pix(RA_cent,cr1_subim,z_cent,0)
-                        _, cr2_pix, _ = w.wcs_world2pix(RA_cent,cr2_subim,z_cent,0)
+                        w2pc[0,0], w2pc[0,1] = RA_cent, cr1_subim
+                        cr1_pix = w.wcs_world2pix(w2pc,0)[0,1]
+                        w2pc[0,0], w2pc[0,1] = RA_cent, cr2_subim
+                        cr2_pix = w.wcs_world2pix(w2pc,0)[0,1]
                     else:
+                        w2pc[0,0], w2pc[0,1] = RA_cent, Dec_cent
                         cr1_subim = z_cent - d
-                        cr1_subim = z_cent + d
-                        _, _, cr1_pix = w.wcs_world2pix(RA_cent,Dec_cent,cr1_subim,0)
-                        _, _, cr2_pix = w.wcs_world2pix(RA_cent,Dec_cent,cr2_subim,0)
+                        cr2_subim = z_cent + d
+                        w2pc[0,2] = cr1_subim
+                        cr1_pix = w.wcs_world2pix(w2pc,0)[0,2]
+                        w2pc[0,2] = cr2_subim
+                        cr2_pix = w.wcs_world2pix(w2pc,0)[0,2]
 
                     naxis_im = hdul[0].header['NAXIS{}'.format(ax)]
                     min_pix, max_pix = min(cr1_pix,cr2_pix), max(cr1_pix,cr2_pix)
